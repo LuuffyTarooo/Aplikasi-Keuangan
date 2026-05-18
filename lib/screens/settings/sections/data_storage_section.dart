@@ -22,7 +22,7 @@ class _DataStorageContent extends StatefulWidget {
   const _DataStorageContent();
 
   @override
-  State<_DataStorageContent> createState() => _DataStorageContentState(); // 🟢 FIX: Tipe penargetan State disesuaikan biar gak bentrok compile
+  State<_DataStorageContent> createState() => _DataStorageContentState();
 }
 
 class _DataStorageContentState extends State<_DataStorageContent> {
@@ -84,19 +84,19 @@ class _DataStorageContentState extends State<_DataStorageContent> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          backgroundColor: const Color(0xFF161B22),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: const BorderSide(color: Colors.white10)),
-          title: const Row(
+          backgroundColor: finance.themeBg, // 🟢 AUTO-SYNC Latar Solid
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: BorderSide(color: finance.themeBorder)),
+          title: Row(
             children: [
-              Icon(Icons.upload_file_rounded, color: Colors.orangeAccent),
-              SizedBox(width: 8),
-              Text("Restore Data", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+              const Icon(Icons.upload_file_rounded, color: Colors.orangeAccent),
+              const SizedBox(width: 8),
+              Text("Restore Data", style: TextStyle(color: finance.themeText, fontSize: 18, fontWeight: FontWeight.bold)),
             ],
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text("Tempel (Paste) teks JSON backup lu di kotak bawah ini. Peringatan: Data lama akan tertimpa sepenuhnya!", style: TextStyle(color: Colors.white54, fontSize: 12)),
+              Text("Tempel (Paste) teks JSON backup lu di kotak bawah ini. Peringatan: Data lama akan tertimpa sepenuhnya!", style: TextStyle(color: finance.themeTextSub, fontSize: 12)),
               const SizedBox(height: 16),
               
               TextField(
@@ -105,19 +105,19 @@ class _DataStorageContentState extends State<_DataStorageContent> {
                 style: const TextStyle(color: Colors.orangeAccent, fontSize: 11, fontFamily: 'monospace', fontWeight: FontWeight.bold),
                 decoration: InputDecoration(
                   filled: true, 
-                  fillColor: Colors.white.withValues(alpha:0.05),
+                  fillColor: finance.themeCard, // 🟢 Kotak input ngikut tema
                   hintText: '{"sumberDana": [...], "transaksi": [...]}',
-                  hintStyle: TextStyle(color: Colors.orangeAccent.withValues(alpha:0.2), fontSize: 11),
+                  hintStyle: TextStyle(color: Colors.orangeAccent.withValues(alpha:0.3), fontSize: 11),
                   contentPadding: const EdgeInsets.all(16),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Colors.white10)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Colors.white10)),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: finance.themeBorder)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: finance.themeBorder)),
                   focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Colors.orangeAccent, width: 1.5)),
                 ),
               ),
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text("Batal", style: TextStyle(color: Colors.white54))),
+            TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text("Batal", style: TextStyle(color: finance.themeTextSub))),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orangeAccent, 
@@ -160,16 +160,16 @@ class _DataStorageContentState extends State<_DataStorageContent> {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: const Color(0xFF161B22),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: const BorderSide(color: Colors.white10)),
+        backgroundColor: finance.themeBg, // 🟢 AUTO-SYNC Latar Solid
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: BorderSide(color: finance.themeBorder)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.pinkAccent.withValues(alpha:0.1), shape: BoxShape.circle), child: const Icon(Icons.delete_forever_rounded, color: Colors.pinkAccent, size: 32)),
+            Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.redAccent.withValues(alpha:0.1), shape: BoxShape.circle), child: const Icon(Icons.delete_forever_rounded, color: Colors.redAccent, size: 32)),
             const SizedBox(height: 16),
-            const Text("Hapus Semua Data?", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900)),
+            Text("Hapus Semua Data?", style: TextStyle(color: finance.themeText, fontSize: 18, fontWeight: FontWeight.w900)),
             const SizedBox(height: 8),
-            const Text("PERINGATAN KERAS!\nApakah kamu yakin ingin MENGHAPUS SEMUA DATA?\n\nData yang dihapus tidak bisa dikembalikan kecuali kamu punya teks backup JSON!", textAlign: TextAlign.center, style: TextStyle(color: Colors.white54, fontSize: 12)),
+            Text("PERINGATAN KERAS!\nApakah kamu yakin ingin MENGHAPUS SEMUA DATA?\n\nData yang dihapus tidak bisa dikembalikan kecuali kamu punya teks backup JSON!", textAlign: TextAlign.center, style: TextStyle(color: finance.themeTextSub, fontSize: 12)),
             const SizedBox(height: 24),
             CustomButton(text: "Ya, Musnahkan!", variant: ButtonVariant.danger, fullWidth: true, onPressed: () {
               HapticFeedback.heavyImpact();
@@ -196,9 +196,9 @@ class _DataStorageContentState extends State<_DataStorageContent> {
 
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF05010D).withValues(alpha:0.95),
+        color: finance.themeBg, // 🟢 AUTO-SYNC Latar Solid
         borderRadius: const BorderRadius.vertical(top: Radius.circular(40)),
-        border: const Border(top: BorderSide(color: Colors.white10)),
+        border: Border(top: BorderSide(color: finance.themeBorder)),
       ),
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
       child: Column(
@@ -210,16 +210,20 @@ class _DataStorageContentState extends State<_DataStorageContent> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Column(
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("Data & Storage", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
-                    Text("BACKUP & RESTORE DATA", style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                    Text("Data & Storage", style: TextStyle(color: finance.themeText, fontSize: 20, fontWeight: FontWeight.w900)),
+                    Text("BACKUP & RESTORE DATA", style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
                   ],
                 ),
                 GestureDetector(
                   onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); },
-                  child: Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: Colors.white.withValues(alpha:0.05), shape: BoxShape.circle), child: const Icon(Icons.close_rounded, color: Colors.white54, size: 20)),
+                  child: Container(
+                    padding: const EdgeInsets.all(8), 
+                    decoration: BoxDecoration(color: finance.themeCard, shape: BoxShape.circle, border: Border.all(color: finance.themeBorder)), 
+                    child: Icon(Icons.close_rounded, color: finance.themeTextSub, size: 20)
+                  ),
                 ),
               ],
             ),
@@ -229,22 +233,22 @@ class _DataStorageContentState extends State<_DataStorageContent> {
             padding: const EdgeInsets.all(24),
             child: Column(
               children: [
-                // 1. INFO BOX LOCAL STORAGE (Glassmorphism Biru)
+                // 1. INFO BOX LOCAL STORAGE (Flat Design)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                  decoration: BoxDecoration(color: const Color(0xFF3B82F6).withValues(alpha:0.1), borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFF3B82F6).withValues(alpha:0.3))),
-                  child: const Row(
+                  decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFF3B82F6).withValues(alpha:0.5))),
+                  child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.shield_rounded, color: Color(0xFF60A5FA), size: 24),
-                      SizedBox(width: 12),
+                      const Icon(Icons.shield_rounded, color: Color(0xFF3B82F6), size: 24),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text("Data Tersimpan Lokal", style: TextStyle(color: Color(0xFF60A5FA), fontSize: 12, fontWeight: FontWeight.bold)),
-                            SizedBox(height: 4),
-                            Text("Semua catatan kamu 100% aman di perangkat ini (Offline). Salin Data secara rutin agar tidak hilang jika berganti HP.", style: TextStyle(color: Colors.white70, fontSize: 10, height: 1.5)),
+                            const Text("Data Tersimpan Lokal", style: TextStyle(color: Color(0xFF3B82F6), fontSize: 12, fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 4),
+                            Text("Semua catatan kamu 100% aman di perangkat ini (Offline). Salin Data secara rutin agar tidak hilang jika berganti HP.", style: TextStyle(color: finance.themeTextSub, fontSize: 10, height: 1.5)),
                           ],
                         ),
                       )
@@ -258,21 +262,21 @@ class _DataStorageContentState extends State<_DataStorageContent> {
                   onTap: () => _handleBackupData(finance),
                   child: Container(
                     padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(color: Colors.white.withValues(alpha:0.05), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.white10)),
+                    decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(20), border: Border.all(color: finance.themeBorder)),
                     child: Row(
                       children: [
-                        Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: Colors.greenAccent.withValues(alpha:0.1), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.greenAccent.withValues(alpha:0.3))), child: const Icon(Icons.cloud_download_rounded, color: Colors.greenAccent)),
+                        Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: Colors.green.withValues(alpha:0.1), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.green.withValues(alpha:0.3))), child: const Icon(Icons.cloud_download_rounded, color: Colors.green)),
                         const SizedBox(width: 16),
-                        const Expanded(
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text("Backup Data", style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
-                              Text("Salin data jadi teks (.json) ke Clipboard", style: TextStyle(color: Colors.white54, fontSize: 10)),
+                              Text("Backup Data", style: TextStyle(color: finance.themeText, fontSize: 14, fontWeight: FontWeight.bold)),
+                              Text("Salin data jadi teks (.json) ke Clipboard", style: TextStyle(color: finance.themeTextSub, fontSize: 10)),
                             ],
                           ),
                         ),
-                        const Icon(Icons.chevron_right_rounded, color: Colors.white30),
+                        Icon(Icons.chevron_right_rounded, color: finance.themeTextSub),
                       ],
                     ),
                   ),
@@ -284,21 +288,21 @@ class _DataStorageContentState extends State<_DataStorageContent> {
                   onTap: () => _handleRestoreData(finance),
                   child: Container(
                     padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(color: Colors.white.withValues(alpha:0.05), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.white10)),
+                    decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(20), border: Border.all(color: finance.themeBorder)),
                     child: Row(
                       children: [
-                        Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: Colors.orangeAccent.withValues(alpha:0.1), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.orangeAccent.withValues(alpha:0.3))), child: const Icon(Icons.cloud_upload_rounded, color: Colors.orangeAccent)),
+                        Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: Colors.orange.withValues(alpha:0.1), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.orange.withValues(alpha:0.3))), child: const Icon(Icons.cloud_upload_rounded, color: Colors.orange)),
                         const SizedBox(width: 16),
-                        const Expanded(
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text("Restore Data", style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
-                              Text("Pulihkan dari teks backup", style: TextStyle(color: Colors.white54, fontSize: 10)),
+                              Text("Restore Data", style: TextStyle(color: finance.themeText, fontSize: 14, fontWeight: FontWeight.bold)),
+                              Text("Pulihkan dari teks backup", style: TextStyle(color: finance.themeTextSub, fontSize: 10)),
                             ],
                           ),
                         ),
-                        const Icon(Icons.chevron_right_rounded, color: Colors.white30),
+                        Icon(Icons.chevron_right_rounded, color: finance.themeTextSub),
                       ],
                     ),
                   ),
@@ -310,17 +314,17 @@ class _DataStorageContentState extends State<_DataStorageContent> {
                   onTap: () => _handleResetConfirm(finance),
                   child: Container(
                     padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(color: Colors.pinkAccent.withValues(alpha:0.1), borderRadius: BorderRadius.circular(24), border: Border.all(color: Colors.pinkAccent.withValues(alpha:0.5)), boxShadow: [BoxShadow(color: Colors.pinkAccent.withValues(alpha:0.1), blurRadius: 20)]),
+                    decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(24), border: Border.all(color: Colors.redAccent.withValues(alpha:0.5))),
                     child: Row(
                       children: [
-                        Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: Colors.pinkAccent.withValues(alpha:0.2), borderRadius: BorderRadius.circular(16)), child: const Icon(Icons.delete_outline_rounded, color: Colors.pinkAccent)),
+                        Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: Colors.redAccent.withValues(alpha:0.1), borderRadius: BorderRadius.circular(16)), child: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent)),
                         const SizedBox(width: 16),
-                        const Expanded(
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text("Hapus Semua Data", style: TextStyle(color: Colors.pinkAccent, fontSize: 14, fontWeight: FontWeight.bold)),
-                              Text("Reset aplikasi seperti semula", style: TextStyle(color: Colors.white54, fontSize: 10)),
+                              const Text("Hapus Semua Data", style: TextStyle(color: Colors.redAccent, fontSize: 14, fontWeight: FontWeight.bold)),
+                              Text("Reset aplikasi seperti semula", style: TextStyle(color: finance.themeTextSub, fontSize: 10)),
                             ],
                           ),
                         ),

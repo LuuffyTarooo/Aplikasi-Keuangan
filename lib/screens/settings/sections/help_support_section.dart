@@ -1,6 +1,9 @@
 // lib/screens/settings/sections/help_support_section.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+
+import 'package:aplikasi_keuangan/providers/finance_provider.dart';
 import 'package:aplikasi_keuangan/screens/settings/widgets/setting_ui.dart';
 
 class HelpSupportSection extends StatelessWidget {
@@ -10,6 +13,9 @@ class HelpSupportSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 🟢 AUTO-SYNC: Panggil provider buat ngambil warna aksen
+    final finance = Provider.of<FinanceProvider>(context);
+
     return SettingsGroup(
       title: "Help & Support",
       children: [
@@ -50,13 +56,13 @@ class HelpSupportSection extends StatelessWidget {
           trailing: Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: const Color(0xFF9333EA).withValues(alpha: 0.1),
-              border: Border.all(color: const Color(0xFF9333EA).withValues(alpha: 0.3)),
+              color: finance.themeAccent.withValues(alpha: 0.1), // 🟢 AUTO-SYNC
+              border: Border.all(color: finance.themeAccent.withValues(alpha: 0.3)), // 🟢 AUTO-SYNC
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Text(
+            child: Text(
               "V1.0.0",
-              style: TextStyle(color: Color(0xFFA855F7), fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5),
+              style: TextStyle(color: finance.themeAccent, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5), // 🟢 AUTO-SYNC
             ),
           ),
           onTap: onOpenAboutModal,

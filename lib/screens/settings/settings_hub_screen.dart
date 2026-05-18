@@ -1,16 +1,20 @@
 // lib/screens/settings/settings_hub_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // 🟢 FIX: Import SharedPreferences
 
 // 🚀 IMPORT COMPONENT SECTION & WIDGET KITA
+import 'package:aplikasi_keuangan/providers/finance_provider.dart';
 import 'package:aplikasi_keuangan/screens/settings/sections/general_settings.dart';
 import 'package:aplikasi_keuangan/screens/settings/sections/help_support_section.dart';
 import 'package:aplikasi_keuangan/screens/settings/sections/security_section.dart'; 
 import 'package:aplikasi_keuangan/screens/settings/widgets/setting_ui.dart'; 
 import 'package:aplikasi_keuangan/screens/settings/sections/data_storage_section.dart'; 
+import 'package:aplikasi_keuangan/screens/settings/dialogs/pin_manager_dialog.dart';
 
 class SettingsScreen extends StatefulWidget {
-  final Function(dynamic)? onNavigate; // 🟢 1. Tambahin callback biar bisa pindah tab secara safe
+  final Function(dynamic)? onNavigate; 
 
   const SettingsScreen({super.key, this.onNavigate});
 
@@ -21,69 +25,93 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _isDarkMode = true;
   String _mataUang = 'IDR';
-  
-  final String _appPin = "1234"; 
+  String _appPin = ""; 
 
-  void _openAboutModal() {
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings(); // 🟢 Manggil data permanen pas halaman dibuka
+  }
+
+  // 🟢 FUNGSI LOAD DATA PERMANEN
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _appPin = prefs.getString('app_pin') ?? "";
+      _mataUang = prefs.getString('app_currency') ?? "IDR";
+      // Note: Dark mode udah otomatis diurus di FinanceProvider lu
+    });
+  }
+
+  void _openAboutModal(FinanceProvider finance) {
     HapticFeedback.mediumImpact();
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF161B22),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: const BorderSide(color: Colors.white10)),
-        title: const Text("Duit Tracker v1.0.0", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900)),
-        content: const Text("Dibuat dengan 🔥 oleh lu buat ngatur duit biar makin jago!", style: TextStyle(color: Colors.white54, fontSize: 12)),
+        backgroundColor: finance.themeBg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: BorderSide(color: finance.themeBorder)),
+        title: Text("Duit Tracker v1.0.0", style: TextStyle(color: finance.themeText, fontWeight: FontWeight.w900)),
+        content: Text("Dibuat dengan 🔥 oleh lu buat ngatur duit biar makin jago!", style: TextStyle(color: finance.themeTextSub, fontSize: 12)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Beres", style: TextStyle(color: Color(0xFFD946EF), fontWeight: FontWeight.bold)),
+            child: Text("Beres", style: TextStyle(color: finance.themeAccent, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
     );
   }
 
-  void _openPinModal() {
+  void _openPinModal(FinanceProvider finance) {
     HapticFeedback.mediumImpact();
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF161B22),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: const BorderSide(color: Colors.white10)),
-        title: const Text("Keamanan PIN", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900)),
-        content: const Text("Modal dialog konfigurasi PIN atau PinManagerDialog lu bakal dipanggil di sini Jar.", style: TextStyle(color: Colors.white54, fontSize: 12)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("OK", style: TextStyle(color: Color(0xFFD946EF), fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
+    
+    PinManagerScreen.show(context, _appPin, (newPin) async {
+      setState(() {
+        _appPin = newPin ?? ""; 
+      });
+      
+      // 🟢 FUNGSI SAVE PIN PERMANEN
+      final prefs = await SharedPreferences.getInstance();
+      if (newPin == null || newPin.isEmpty) {
+        await prefs.remove('app_pin'); // Dihapus kalau dinonaktifkan
+      } else {
+        await prefs.setString('app_pin', newPin); // Disimpan
+      }
+    });
   }
 
-  void _openCurrencyModal() {
+  void _openCurrencyModal(FinanceProvider finance) {
     HapticFeedback.mediumImpact();
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
         padding: const EdgeInsets.all(24),
-        decoration: const BoxDecoration(color: Color(0xFF161B22), borderRadius: BorderRadius.vertical(top: Radius.circular(32)), border: Border(top: BorderSide(color: Colors.white10))),
+        decoration: BoxDecoration(color: finance.themeBg, borderRadius: const BorderRadius.vertical(top: Radius.circular(32)), border: Border(top: BorderSide(color: finance.themeBorder))),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text("Pilih Mata Uang", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900)),
+            Text("Pilih Mata Uang", style: TextStyle(color: finance.themeText, fontSize: 18, fontWeight: FontWeight.w900)),
             const SizedBox(height: 16),
             ListTile(
-              title: const Text("Rupiah (IDR)", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-              trailing: _mataUang == 'IDR' ? const Icon(Icons.check_circle_rounded, color: Color(0xFFD946EF)) : null,
-              onTap: () { setState(() => _mataUang = 'IDR'); Navigator.pop(context); },
+              title: Text("Rupiah (IDR)", style: TextStyle(color: finance.themeText, fontWeight: FontWeight.bold)),
+              trailing: _mataUang == 'IDR' ? Icon(Icons.check_circle_rounded, color: finance.themeAccent) : null,
+              onTap: () async { 
+                setState(() => _mataUang = 'IDR'); 
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setString('app_currency', 'IDR'); // 🟢 Save Permanen
+                if (context.mounted) Navigator.pop(context); 
+              },
             ),
             ListTile(
-              title: const Text("US Dollar (USD)", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-              trailing: _mataUang == 'USD' ? const Icon(Icons.check_circle_rounded, color: Color(0xFFD946EF)) : null,
-              onTap: () { setState(() => _mataUang = 'USD'); Navigator.pop(context); },
+              title: Text("US Dollar (USD)", style: TextStyle(color: finance.themeText, fontWeight: FontWeight.bold)),
+              trailing: _mataUang == 'USD' ? Icon(Icons.check_circle_rounded, color: finance.themeAccent) : null,
+              onTap: () async { 
+                setState(() => _mataUang = 'USD'); 
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setString('app_currency', 'USD'); // 🟢 Save Permanen
+                if (context.mounted) Navigator.pop(context); 
+              },
             ),
           ],
         ),
@@ -93,8 +121,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final finance = Provider.of<FinanceProvider>(context);
+
     return Scaffold(
-      backgroundColor: const Color(0xFF05010D),
+      backgroundColor: finance.themeBg, 
       body: SafeArea(
         child: Column(
           children: [
@@ -106,25 +136,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   GestureDetector(
                     onTap: () { 
                       HapticFeedback.lightImpact(); 
-                      // 🟢 2. VAKSIN ANTI LAYAR PUTIH: Cek kondisi tumpukan navigasi stack
                       if (Navigator.canPop(context)) {
-                        Navigator.pop(context); // Kalau dia halaman terpisah, pop biasa
+                        Navigator.pop(context); 
                       } else {
-                        widget.onNavigate?.call(0); // Kalau dia bertindak sebagai tab, lempar balik ke Dashboard (Index 0)
+                        widget.onNavigate?.call(0); 
                       }
                     },
                     child: Container(
                       padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(color: Colors.white.withValues(alpha:0.05), shape: BoxShape.circle),
-                      child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+                      decoration: BoxDecoration(color: finance.themeCard, shape: BoxShape.circle, border: Border.all(color: finance.themeBorder)),
+                      child: Icon(Icons.arrow_back_ios_new_rounded, color: finance.themeTextSub, size: 20),
                     ),
                   ),
                   const SizedBox(width: 16),
-                  const Column(
+                  Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("Pengaturan", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900)),
-                      Text("KUSTOMISASI & BANTUAN", style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                      Text("Pengaturan", style: TextStyle(color: finance.themeText, fontSize: 24, fontWeight: FontWeight.w900)),
+                      Text("KUSTOMISASI & BANTUAN", style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
                     ],
                   ),
                 ],
@@ -143,14 +172,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       isDarkMode: _isDarkMode,
                       mataUang: _mataUang,
                       onThemeChanged: (val) => setState(() => _isDarkMode = val),
-                      onOpenCurrencyModal: _openCurrencyModal,
+                      onOpenCurrencyModal: () => _openCurrencyModal(finance),
                     ),
                     const SizedBox(height: 16),
 
                     // 2. Security Section
                     SecuritySection(
                       appPin: _appPin,
-                      onOpenPinModal: _openPinModal,
+                      onOpenPinModal: () => _openPinModal(finance),
                       setUseBiometric: (_) {}, 
                     ),
                     const SizedBox(height: 16),
@@ -162,7 +191,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         SettingsItem(
                           icon: Icons.storage_rounded,
                           title: "Kelola Data & Storage",
-                          trailing: const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white30, size: 14),
+                          trailing: Icon(Icons.arrow_forward_ios_rounded, color: finance.themeTextSub, size: 14),
                           onTap: () {
                             HapticFeedback.lightImpact();
                             DataStorageSheet.show(context); 
@@ -174,7 +203,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                     // 4. Help & Support Section
                     HelpSupportSection(
-                      onOpenAboutModal: _openAboutModal,
+                      onOpenAboutModal: () => _openAboutModal(finance),
                     ),
                     const SizedBox(height: 40),
                   ],

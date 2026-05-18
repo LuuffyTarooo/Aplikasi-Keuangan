@@ -1,11 +1,9 @@
 // lib/screens/dashboard/budget/budget_tracker_screen.dart
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'package:aplikasi_keuangan/providers/finance_provider.dart';
-import 'package:aplikasi_keuangan/shared/widgets/glass_card.dart';
 import 'package:aplikasi_keuangan/core/utils/formatters.dart';
 import 'package:aplikasi_keuangan/models/category_model.dart'; 
 
@@ -77,7 +75,7 @@ class _BudgetTrackerScreenState extends State<BudgetTrackerScreen> {
     }
 
     return Scaffold(
-      backgroundColor: finance.themeBg, // 🟢 AUTO-SYNC: Solid warna ala GoPay
+      backgroundColor: finance.themeBg, // 🟢 AUTO-SYNC: Solid warna
       body: Stack(
         children: [
           SingleChildScrollView(
@@ -127,8 +125,10 @@ class _BudgetTrackerScreenState extends State<BudgetTrackerScreen> {
                     ),
                   )
                 else ...[
-                  GlassCard( // Otomatis sync dari glass_card lu
+                  // 🟢 FIX: GlassCard dicabut, diganti Container flat
+                  Container( 
                     padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(24), border: Border.all(color: finance.themeBorder)),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -319,7 +319,10 @@ class _BudgetTrackerScreenState extends State<BudgetTrackerScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text("Total Anggaran Bulanan", style: TextStyle(color: finance.themeText, fontSize: 18, fontWeight: FontWeight.w900)),
-                  GestureDetector(onTap: () => Navigator.pop(context), child: Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: finance.themeCard, shape: BoxShape.circle), child: Icon(Icons.close, color: finance.themeTextSub, size: 20)))
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context), 
+                    child: Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: finance.themeCard, shape: BoxShape.circle, border: Border.all(color: finance.themeBorder)), child: Icon(Icons.close_rounded, color: finance.themeTextSub, size: 20))
+                  )
                 ],
               ),
               const SizedBox(height: 8),
@@ -358,7 +361,8 @@ class _BudgetTrackerScreenState extends State<BudgetTrackerScreen> {
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 18),
-                  decoration: BoxDecoration(color: finance.themeAccent, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: finance.themeAccent.withValues(alpha:0.4), blurRadius: 20)]),
+                  // 🟢 FIX: Shadow dihapus biar solid flat
+                  decoration: BoxDecoration(color: finance.themeAccent, borderRadius: BorderRadius.circular(24)),
                   alignment: Alignment.center,
                   child: const Text("Simpan Total Anggaran", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
                 ),
@@ -410,7 +414,10 @@ class _BudgetTrackerScreenState extends State<BudgetTrackerScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(editCategory != null ? "Edit Limit Kategori" : "Tambah Limit Kategori", style: TextStyle(color: finance.themeText, fontSize: 18, fontWeight: FontWeight.w900)),
-                      GestureDetector(onTap: () => Navigator.pop(context), child: Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: finance.themeCard, shape: BoxShape.circle), child: Icon(Icons.close, color: finance.themeTextSub, size: 20)))
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context), 
+                        child: Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: finance.themeCard, shape: BoxShape.circle, border: Border.all(color: finance.themeBorder)), child: Icon(Icons.close_rounded, color: finance.themeTextSub, size: 20))
+                      )
                     ],
                   ),
                   const SizedBox(height: 24),
@@ -432,7 +439,7 @@ class _BudgetTrackerScreenState extends State<BudgetTrackerScreen> {
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 200),
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                              decoration: BoxDecoration(color: isSelected ? finance.themeAccent.withValues(alpha:0.2) : finance.themeCard, borderRadius: BorderRadius.circular(20), border: Border.all(color: isSelected ? finance.themeAccent : finance.themeBorder)),
+                              decoration: BoxDecoration(color: isSelected ? finance.themeAccent.withValues(alpha:0.15) : finance.themeCard, borderRadius: BorderRadius.circular(20), border: Border.all(color: isSelected ? finance.themeAccent : finance.themeBorder)),
                               child: Text(cat, style: TextStyle(color: isSelected ? finance.themeAccent : finance.themeTextSub, fontWeight: FontWeight.bold, fontSize: 12)),
                             ),
                           );
@@ -447,7 +454,7 @@ class _BudgetTrackerScreenState extends State<BudgetTrackerScreen> {
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 200),
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                            decoration: BoxDecoration(color: isCustomCategory ? finance.themeAccent.withValues(alpha:0.2) : Colors.transparent, borderRadius: BorderRadius.circular(20), border: Border.all(color: isCustomCategory ? finance.themeAccent : finance.themeBorder, style: BorderStyle.solid)),
+                            decoration: BoxDecoration(color: isCustomCategory ? finance.themeAccent.withValues(alpha:0.15) : Colors.transparent, borderRadius: BorderRadius.circular(20), border: Border.all(color: isCustomCategory ? finance.themeAccent : finance.themeBorder, style: BorderStyle.solid)),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
@@ -545,10 +552,10 @@ class _BudgetTrackerScreenState extends State<BudgetTrackerScreen> {
                     child: Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(vertical: 18),
+                      // 🟢 FIX: Shadow dihapus biar solid flat
                       decoration: BoxDecoration(
                         color: finance.themeAccent, 
                         borderRadius: BorderRadius.circular(24), 
-                        boxShadow: [BoxShadow(color: finance.themeAccent.withValues(alpha:0.4), blurRadius: 20)]
                       ),
                       alignment: Alignment.center,
                       child: const Text("Simpan Anggaran", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: 0.5)),

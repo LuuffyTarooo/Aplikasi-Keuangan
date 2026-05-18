@@ -9,33 +9,41 @@ import 'package:aplikasi_keuangan/models/saving_model.dart';
 import 'package:aplikasi_keuangan/models/debt_model.dart';
 import 'package:aplikasi_keuangan/models/reminder_model.dart';
 import 'package:aplikasi_keuangan/services/local_storage_service.dart';
-import 'package:aplikasi_keuangan/core/theme/app_theme.dart'; // 🟢 Import tema baru lu
 
 class FinanceProvider with ChangeNotifier {
 
   // =========================================
-  // 🎨 STATE TEMA (DARK MODE / LIGHT MODE)
+  // 🎨 TEMA: DARK/LIGHT MODE + CUSTOM AKSEN
   // =========================================
-  bool _isDarkMode = true; // Defaultnya kita kasih mode gelap
+  bool _isDarkMode = true; // Default Gelap
+  Color _themeAccentColor = const Color(0xFF00AA5B); // Default Hijau GoPay
 
   bool get isDarkMode => _isDarkMode;
+  Color get themeAccent => _themeAccentColor;
 
-  // Variabel pintar yang otomatis ganti warna ngikutin mode
-  Color get themeBg => _isDarkMode ? AppTheme.darkBg : AppTheme.lightBg;
-  Color get themeCard => _isDarkMode ? AppTheme.darkCard : AppTheme.lightCard;
-  Color get themeText => _isDarkMode ? AppTheme.darkText : AppTheme.lightText;
-  Color get themeTextSub => _isDarkMode ? AppTheme.darkTextSub : AppTheme.lightTextSub;
-  Color get themeBorder => _isDarkMode ? AppTheme.darkBorder : AppTheme.lightBorder;
-  Color get themeAccent => AppTheme.primaryAccent;
+  // Latar & Kartu Kunci Mati di Warna Solid/Flat
+  Color get themeBg => _isDarkMode ? const Color(0xFF121212) : const Color(0xFFF5F6F8);
+  Color get themeCard => _isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
+  Color get themeText => _isDarkMode ? Colors.white : const Color(0xFF1A1A1A);
+  Color get themeTextSub => _isDarkMode ? Colors.white54 : const Color(0xFF757575);
+  Color get themeBorder => _isDarkMode ? Colors.white10 : const Color(0xFFE0E0E0);
 
+  // Fungsi Saklar Terang/Gelap
   void toggleTheme(bool value) {
     _isDarkMode = value;
-    LocalStorageService.saveData('is_dark_mode', _isDarkMode);
+    _syncToStorage();
+    notifyListeners();
+  }
+
+  // Fungsi Ganti Warna Tombol/Logo
+  void updateThemeAccent(Color color) {
+    _themeAccentColor = color;
+    _syncToStorage();
     notifyListeners();
   }
 
   // =========================================
-  // 💼 STATE KEUANGAN & DATA
+  // 💼 STATE KEUANGAN & DATA (TETAP SAMA)
   // =========================================
   bool isDataMounted = false;
   List<UserModel> users = [];
@@ -69,12 +77,14 @@ class FinanceProvider with ChangeNotifier {
   }
 
   Future<void> initData() async {
-    // 🟢 LOAD SETTINGAN DARK MODE
+    // 🟢 LOAD TEMA & AKSEN
     final savedTheme = await LocalStorageService.loadData('is_dark_mode');
-    if (savedTheme != null) {
-      _isDarkMode = savedTheme as bool;
-    }
+    if (savedTheme != null) _isDarkMode = savedTheme as bool;
 
+    final savedAccent = await LocalStorageService.loadData('theme_accent_color');
+    if (savedAccent != null) _themeAccentColor = Color(savedAccent as int);
+
+    // LOAD DATA
     final usersJson = await LocalStorageService.loadData('duit_users');
     final danaJson = await LocalStorageService.loadData('all_sumberDana');
     final txJson = await LocalStorageService.loadData('all_transaksi');
@@ -219,8 +229,8 @@ class FinanceProvider with ChangeNotifier {
       var dana = allSumberDana[i];
       double newSaldo = dana.saldoTerkini;
       if (tx.idDana == dana.idDana) {
-        if (tx.jenis == 'Pengeluaran' || tx.jenis == 'Transfer') newSaldo -= (tx.nominal * multiplier);
-        else if (tx.jenis == 'Pemasukan') newSaldo += (tx.nominal * multiplier);
+        if (tx.jenis == 'Pengeluaran' || tx.jenis == 'Transfer') { newSaldo -= (tx.nominal * multiplier); }
+        else if (tx.jenis == 'Pemasukan') { newSaldo += (tx.nominal * multiplier); }
         allSumberDana[i] = WalletModel(idDana: dana.idDana, namaAset: dana.namaAset, saldoAwal: dana.saldoAwal, saldoTerkini: newSaldo, userId: dana.userId, isActive: dana.isActive);
       }
       if (tx.jenis == 'Transfer' && tx.idDanaTujuan == dana.idDana) {
@@ -290,7 +300,8 @@ class FinanceProvider with ChangeNotifier {
   }
 
   void _syncToStorage() {
-    LocalStorageService.saveData('is_dark_mode', _isDarkMode); // 🟢 SIMPAN STATE TEMA
+    LocalStorageService.saveData('is_dark_mode', _isDarkMode);
+    LocalStorageService.saveData('theme_accent_color', _themeAccentColor.toARGB32()); // 🟢 Simpan warna Aksen
     LocalStorageService.saveData('duit_users', users.map((e) => e.toJson()).toList());
     LocalStorageService.saveData('all_sumberDana', allSumberDana.map((e) => e.toJson()).toList());
     LocalStorageService.saveData('all_transaksi', allTransaksi.map((e) => e.toJson()).toList());

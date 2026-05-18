@@ -2,11 +2,12 @@
 import 'dart:math'; 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
+import 'package:aplikasi_keuangan/providers/finance_provider.dart';
 import 'package:aplikasi_keuangan/models/transaction_model.dart';
 import 'package:aplikasi_keuangan/core/utils/formatters.dart';
-import 'package:aplikasi_keuangan/shared/widgets/glass_card.dart';
 
 class AnalyticsSection extends StatefulWidget {
   final List<TransactionModel> transaksi;
@@ -29,17 +30,6 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
   String _trendFilter = 'Weekly';
   int? _selectedBarIndex;
 
-  final List<Color> _donutColors = [
-    const Color(0xFFA855F7), 
-    const Color(0xFFD946EF), 
-    const Color(0xFFEC4899), 
-    const Color(0xFF8B5CF6), 
-    const Color(0xFF6366F1), 
-    const Color(0xFF3B82F6), 
-    const Color(0xFF10B981), 
-    const Color(0xFFF59E0B), 
-  ];
-
   @override
   void didUpdateWidget(AnalyticsSection oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -48,11 +38,22 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
     }
   }
 
-  Color get _themeColor => _analysisMode == 'Pemasukan' ? Colors.greenAccent : const Color(0xFFD946EF);
-
   @override
   Widget build(BuildContext context) {
+    final finance = Provider.of<FinanceProvider>(context);
     final modeTxs = widget.transaksi.where((t) => t.jenis == _analysisMode).toList();
+
+    // 🟢 AUTO-SYNC: Bikin daftar warna Donut Chart dinamis! 
+    final List<Color> donutColors = [
+      finance.themeAccent,     
+      const Color(0xFF3B82F6), // Biru
+      const Color(0xFFF59E0B), // Oranye
+      const Color(0xFFEC4899), // Pink
+      const Color(0xFF8B5CF6), // Ungu
+      const Color(0xFF10B981), // Emerald
+      const Color(0xFFEF4444), // Merah
+      const Color(0xFF06B6D4), // Cyan
+    ];
 
     return Column(
       children: [
@@ -76,15 +77,15 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
                   margin: const EdgeInsets.only(right: 8),
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
                   decoration: BoxDecoration(
-                    color: isActive ? const Color(0xFF9333EA) : Colors.white.withValues(alpha:0.05),
+                    color: isActive ? finance.themeAccent : finance.themeCard,
                     borderRadius: BorderRadius.circular(30),
-                    border: Border.all(color: isActive ? const Color(0xFF9333EA).withValues(alpha:0.5) : Colors.white10),
-                    boxShadow: isActive ? [BoxShadow(color: const Color(0xFF9333EA).withValues(alpha:0.4), blurRadius: 15)] : null,
+                    border: Border.all(color: isActive ? finance.themeAccent : finance.themeBorder),
+                    boxShadow: isActive ? [BoxShadow(color: finance.themeAccent.withValues(alpha:0.3), blurRadius: 15)] : null,
                   ),
                   child: Text(
                     tab,
                     style: TextStyle(
-                      color: isActive ? Colors.white : Colors.white54,
+                      color: isActive ? Colors.white : finance.themeTextSub,
                       fontWeight: FontWeight.w900,
                       fontSize: 12,
                     ),
@@ -98,24 +99,25 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
         const SizedBox(height: 16),
 
         if (modeTxs.isEmpty)
-          GlassCard(
+          Container(
             padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(24), border: Border.all(color: finance.themeBorder)),
             child: Center(
               child: Column(
                 children: [
-                  Icon(Icons.pie_chart_outline_rounded, size: 48, color: const Color(0xFFA855F7).withValues(alpha:0.3)),
+                  Icon(Icons.pie_chart_outline_rounded, size: 48, color: finance.themeTextSub.withValues(alpha:0.3)),
                   const SizedBox(height: 12),
-                  const Text("BELUM ADA DATA", style: TextStyle(color: Colors.white54, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 2)),
+                  Text("BELUM ADA DATA", style: TextStyle(color: finance.themeTextSub, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 2)),
                 ],
               ),
             ),
           )
         else ...[
           // --- BAR CHART (TREND) ---
-          _buildBarChart(modeTxs),
+          _buildBarChart(modeTxs, finance),
           const SizedBox(height: 16),
           // --- DONUT CHART (SOURCES) ---
-          _buildDonutChart(modeTxs),
+          _buildDonutChart(modeTxs, finance, donutColors),
         ],
       ],
     );
@@ -124,9 +126,10 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
   // ====================================================
   // ⚡ 1. WIDGET BAR CHART (LOGIKA TREND)
   // ====================================================
-  Widget _buildBarChart(List<TransactionModel> modeTxs) {
+  Widget _buildBarChart(List<TransactionModel> modeTxs, FinanceProvider finance) {
     final year = widget.currentDate.year;
     final month = widget.currentDate.month;
+    final colorUtama = finance.themeAccent;
 
     final trendTxs = modeTxs.where((t) {
       final d = DateTime.parse(t.tanggal);
@@ -139,13 +142,18 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
     List<Map<String, dynamic>> barData = [];
     if (_trendFilter == 'Daily') {
       int daysInMonth = DateTime(year, month + 1, 0).day;
-      for (int i = 1; i <= daysInMonth; i++) { barData.add({'label': '$i', 'nominal': 0.0}); }
+      // 🟢 FIX BIRU LINTER: Tambahin Kurung Kurawal { }
+      for (int i = 1; i <= daysInMonth; i++) { 
+        barData.add({'label': '$i', 'nominal': 0.0}); 
+      }
       for (var tx in trendTxs) {
         int d = DateTime.parse(tx.tanggal).day;
         barData[d - 1]['nominal'] += tx.nominal;
       }
     } else if (_trendFilter == 'Weekly') {
-      for (int i = 1; i <= 5; i++) { barData.add({'label': 'Wk $i', 'nominal': 0.0}); }
+      for (int i = 1; i <= 5; i++) { 
+        barData.add({'label': 'Wk $i', 'nominal': 0.0}); 
+      }
       for (var tx in trendTxs) {
         int d = DateTime.parse(tx.tanggal).day;
         int weekIdx = ((d - 1) / 7).floor();
@@ -153,7 +161,9 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
         barData[weekIdx]['nominal'] += tx.nominal;
       }
     } else if (_trendFilter == 'Monthly') {
-      for (int i = 0; i < 12; i++) { barData.add({'label': Formatters.monthNames[i].substring(0, 3), 'nominal': 0.0}); }
+      for (int i = 0; i < 12; i++) { 
+        barData.add({'label': Formatters.monthNames[i].substring(0, 3), 'nominal': 0.0}); 
+      }
       for (var tx in trendTxs) {
         int m = DateTime.parse(tx.tanggal).month;
         barData[m - 1]['nominal'] += tx.nominal;
@@ -163,8 +173,9 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
     double maxNominal = barData.fold(0.0, (max, item) => item['nominal'] > max ? item['nominal'] : max);
     double safeMax = maxNominal > 0 ? maxNominal : 1;
 
-    return GlassCard(
+    return Container(
       padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(24), border: Border.all(color: finance.themeBorder)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -176,17 +187,17 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(_analysisMode == 'Pemasukan' ? 'Income Trend' : 'Expense Trend', style: const TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
+                    Text(_analysisMode == 'Pemasukan' ? 'Income Trend' : 'Expense Trend', style: TextStyle(color: finance.themeTextSub, fontSize: 12, fontWeight: FontWeight.bold)),
                     Text(
                       Formatters.formatCurrency(trendTotalAmount),
-                      style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -1),
+                      style: TextStyle(color: finance.themeText, fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -1),
                     ),
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        GestureDetector(onTap: () => widget.onDateChange(DateTime(year, month - 1, 1)), child: const Icon(Icons.chevron_left_rounded, color: Colors.white54, size: 20)),
-                        Text(_trendFilter == 'Monthly' ? 'TAHUN $year' : '${Formatters.monthNames[month - 1].toUpperCase()} $year', style: const TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
-                        GestureDetector(onTap: () => widget.onDateChange(DateTime(year, month + 1, 1)), child: const Icon(Icons.chevron_right_rounded, color: Colors.white54, size: 20)),
+                        GestureDetector(onTap: () => widget.onDateChange(DateTime(year, month - 1, 1)), child: Icon(Icons.chevron_left_rounded, color: finance.themeTextSub, size: 20)),
+                        Text(_trendFilter == 'Monthly' ? 'TAHUN $year' : '${Formatters.monthNames[month - 1].toUpperCase()} $year', style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                        GestureDetector(onTap: () => widget.onDateChange(DateTime(year, month + 1, 1)), child: Icon(Icons.chevron_right_rounded, color: finance.themeTextSub, size: 20)),
                       ],
                     ),
                   ],
@@ -197,7 +208,7 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
                 children: [
                   Container(
                     padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(color: Colors.white.withValues(alpha:0.05), borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.white10)),
+                    decoration: BoxDecoration(color: finance.themeBg, borderRadius: BorderRadius.circular(8), border: Border.all(color: finance.themeBorder)),
                     child: Row(
                       children: ['Daily', 'Weekly', 'Monthly'].map((tf) {
                         bool isActive = _trendFilter == tf;
@@ -205,8 +216,8 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
                           onTap: () { HapticFeedback.lightImpact(); setState(() { _trendFilter = tf; _selectedBarIndex = null; }); },
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(color: isActive ? const Color(0xFF9333EA) : Colors.transparent, borderRadius: BorderRadius.circular(6)),
-                            child: Text(tf, style: TextStyle(color: isActive ? Colors.white : Colors.white54, fontSize: 8, fontWeight: FontWeight.w900)),
+                            decoration: BoxDecoration(color: isActive ? finance.themeAccent : Colors.transparent, borderRadius: BorderRadius.circular(6)),
+                            child: Text(tf, style: TextStyle(color: isActive ? Colors.white : finance.themeTextSub, fontSize: 8, fontWeight: FontWeight.w900)),
                           ),
                         );
                       }).toList(),
@@ -219,8 +230,8 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
                         onTap: () { HapticFeedback.lightImpact(); setState(() => _selectedBarIndex = null); },
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(color: Colors.pinkAccent.withValues(alpha:0.1), borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.pinkAccent.withValues(alpha:0.3))),
-                          child: const Row(children: [Icon(Icons.close_rounded, color: Colors.pinkAccent, size: 10), SizedBox(width: 4), Text("Reset", style: TextStyle(color: Colors.pinkAccent, fontSize: 9, fontWeight: FontWeight.bold))]),
+                          decoration: BoxDecoration(color: Colors.redAccent.withValues(alpha:0.1), borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.redAccent.withValues(alpha:0.3))),
+                          child: const Row(children: [Icon(Icons.close_rounded, color: Colors.redAccent, size: 10), SizedBox(width: 4), Text("Reset", style: TextStyle(color: Colors.redAccent, fontSize: 9, fontWeight: FontWeight.bold))]),
                         ),
                       ),
                     ),
@@ -230,7 +241,6 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
           ),
           const SizedBox(height: 24),
 
-          // 🟢 FIX: Tinggi area chart dinaikin dikit biar tooltip gak nabrak atas/bawah
           SizedBox(
             height: 220, 
             child: LayoutBuilder(
@@ -244,7 +254,7 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
                       children: [
                         Column(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: List.generate(5, (index) => Container(height: 1, color: Colors.white.withValues(alpha:0.05))),
+                          children: List.generate(5, (index) => Container(height: 1, width: _trendFilter == 'Daily' ? 600 : constraints.maxWidth, color: finance.themeBorder)),
                         ),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.end,
@@ -271,14 +281,13 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
                                     mainAxisAlignment: MainAxisAlignment.end,
                                     children: [
                                       if (isSelected && !isZero)
-                                        // 🟢 FIX: UnconstrainedBox biar tooltip teks nominalnya gak ke-wrap memanjang ke bawah!
-                                        UnconstrainedBox(
-                                          alignment: Alignment.bottomCenter,
+                                        FittedBox(
+                                          fit: BoxFit.scaleDown,
                                           child: Container(
                                             margin: const EdgeInsets.only(bottom: 6),
                                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                            decoration: BoxDecoration(color: _themeColor.withValues(alpha:0.2), borderRadius: BorderRadius.circular(6), border: Border.all(color: _themeColor)),
-                                            child: Text(Formatters.formatUangCompact(nominal), style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
+                                            decoration: BoxDecoration(color: colorUtama.withValues(alpha:0.2), borderRadius: BorderRadius.circular(6), border: Border.all(color: colorUtama)),
+                                            child: Text(Formatters.formatUangCompact(nominal), style: TextStyle(color: finance.themeText, fontSize: 9, fontWeight: FontWeight.bold)),
                                           ),
                                         ),
                                       AnimatedContainer(
@@ -287,15 +296,14 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
                                         width: 16,
                                         margin: const EdgeInsets.only(bottom: 8),
                                         decoration: BoxDecoration(
-                                          gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [const Color(0xFF7C3AED), _themeColor]),
+                                          color: isZero ? finance.themeBorder : colorUtama,
                                           borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
-                                          boxShadow: isSelected ? [BoxShadow(color: _themeColor.withValues(alpha:0.6), blurRadius: 10)] : [],
-                                          color: isZero ? Colors.white.withValues(alpha:0.1) : null,
+                                          boxShadow: isSelected ? [BoxShadow(color: colorUtama.withValues(alpha:0.6), blurRadius: 10)] : [],
                                         ),
                                         foregroundDecoration: BoxDecoration(color: isDimmed ? Colors.black.withValues(alpha:0.5) : Colors.transparent),
                                       ),
-                                      Text(label, style: TextStyle(color: isSelected ? _themeColor : Colors.white54, fontSize: 9, fontWeight: FontWeight.bold)),
-                                      const SizedBox(height: 4), // 🟢 FIX: Padding bawah biar label gak nempel banget ke lantai overflow
+                                      Text(label, style: TextStyle(color: isSelected ? colorUtama : finance.themeTextSub, fontSize: 9, fontWeight: FontWeight.bold)),
+                                      const SizedBox(height: 4),
                                     ],
                                   ),
                                 ),
@@ -307,7 +315,7 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
                     ),
                   ),
                 );
-              },
+              }
             ),
           ),
         ],
@@ -318,7 +326,7 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
   // ====================================================
   // ⚡ 2. WIDGET DONUT CHART & GRID (LOGIKA KATEGORI)
   // ====================================================
-  Widget _buildDonutChart(List<TransactionModel> modeTxs) {
+  Widget _buildDonutChart(List<TransactionModel> modeTxs, FinanceProvider finance, List<Color> donutColors) {
     final year = widget.currentDate.year;
     final month = widget.currentDate.month;
 
@@ -369,24 +377,25 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
 
     List<double> chartValues = chartData.map((e) => e.value).toList();
 
-    return GlassCard(
+    return Container(
       padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(24), border: Border.all(color: finance.themeBorder)),
       child: Column(
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(_analysisMode == 'Pemasukan' ? 'Income Sources' : 'Expense Sources', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+              Text(_analysisMode == 'Pemasukan' ? 'Income Sources' : 'Expense Sources', style: TextStyle(color: finance.themeText, fontSize: 16, fontWeight: FontWeight.bold)),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(color: Colors.white.withValues(alpha:0.05), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.white10)),
+                decoration: BoxDecoration(color: finance.themeBg, borderRadius: BorderRadius.circular(12), border: Border.all(color: finance.themeBorder)),
                 child: Row(
                   children: [
-                    const Icon(Icons.chevron_left_rounded, size: 14, color: Colors.white54),
+                    Icon(Icons.chevron_left_rounded, size: 14, color: finance.themeTextSub),
                     const SizedBox(width: 4),
-                    Text(periodLabel, style: const TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+                    Text(periodLabel, style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
                     const SizedBox(width: 4),
-                    const Icon(Icons.chevron_right_rounded, size: 14, color: Colors.white54),
+                    Icon(Icons.chevron_right_rounded, size: 14, color: finance.themeTextSub),
                   ],
                 ),
               ),
@@ -394,9 +403,9 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
           ),
           
           if (chartData.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 40),
-              child: Text("Tidak ada data untuk periode ini.", style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 40),
+              child: Text("Tidak ada data untuk periode ini.", style: TextStyle(color: finance.themeTextSub, fontSize: 12, fontWeight: FontWeight.bold)),
             )
           else ...[
             Padding(
@@ -410,7 +419,7 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
                     child: CustomPaint(
                       painter: _DonutChartPainter(
                         values: chartValues,
-                        colors: _donutColors,
+                        colors: donutColors, 
                         strokeWidth: 35, 
                       ),
                     ),
@@ -418,11 +427,11 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
                   Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text("TOTAL", style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
+                      Text("TOTAL", style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
                       const SizedBox(height: 2),
                       Text(
                         Formatters.formatUangCompact(sourceTotalAmount),
-                        style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900),
+                        style: TextStyle(color: finance.themeText, fontSize: 16, fontWeight: FontWeight.w900),
                       ),
                     ],
                   )
@@ -430,35 +439,35 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
               ),
             ),
 
-            // 🟢 FIX: Mengganti GridView jadi LayoutBuilder + Wrap biar otomatis nengah
             LayoutBuilder(
               builder: (context, constraints) {
-                // Kalkulasi lebar 1 kotak (12 itu margin jarak antar kotak)
                 double itemWidth = (constraints.maxWidth - 12) / 2;
                 
                 return Wrap(
                   spacing: 12,
                   runSpacing: 12,
-                  alignment: WrapAlignment.center, // Kunci utama biar ke tengah!
+                  alignment: WrapAlignment.center, 
                   children: chartData.asMap().entries.map((entry) {
                     int idx = entry.key;
                     String catName = entry.value.key;
                     double nominal = entry.value.value;
                     double percent = sourceTotalAmount > 0 ? (nominal / sourceTotalAmount) * 100 : 0;
-                    Color catColor = _donutColors[idx % _donutColors.length];
+                    
+                    Color catColor = donutColors[idx % donutColors.length];
 
                     return SizedBox(
                       width: itemWidth,
                       child: GestureDetector(
                         onTap: () {
                           HapticFeedback.lightImpact();
-                          _showCategoryDetailModal(catName, sourceTxs.where((t) => t.kategori == catName).toList());
+                          _showCategoryDetailModal(catName, sourceTxs.where((t) => t.kategori == catName).toList(), finance);
                         },
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF1E1B38),
+                            color: finance.themeBg,
                             borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: finance.themeBorder),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -470,17 +479,17 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
                                   Expanded(
                                     child: Text(
                                       catName, 
-                                      style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w600),
+                                      style: TextStyle(color: finance.themeTextSub, fontSize: 11, fontWeight: FontWeight.w600),
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
-                                  Text("${percent.toStringAsFixed(0)}%", style: const TextStyle(color: Colors.white54, fontSize: 10)),
+                                  Text("${percent.toStringAsFixed(0)}%", style: TextStyle(color: finance.themeTextSub, fontSize: 10)),
                                 ],
                               ),
                               const SizedBox(height: 12),
                               Text(
                                 Formatters.formatCurrency(nominal), 
-                                style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)
+                                style: TextStyle(color: finance.themeText, fontSize: 13, fontWeight: FontWeight.bold)
                               ),
                             ],
                           ),
@@ -500,20 +509,20 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
   // ====================================================
   // ⚡ 3. MODAL DETAIL KATEGORI (BOTTOM SHEET)
   // ====================================================
-  void _showCategoryDetailModal(String categoryName, List<TransactionModel> txs) {
+  void _showCategoryDetailModal(String categoryName, List<TransactionModel> txs, FinanceProvider finance) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) {
         return Container(
           padding: const EdgeInsets.all(24),
-          decoration: const BoxDecoration(color: Color(0xFF161B22), borderRadius: BorderRadius.vertical(top: Radius.circular(32)), border: Border(top: BorderSide(color: Colors.white10))),
+          decoration: BoxDecoration(color: finance.themeBg, borderRadius: const BorderRadius.vertical(top: Radius.circular(32)), border: Border(top: BorderSide(color: finance.themeBorder))),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(categoryName, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900)),
-              const Text("Rincian Transaksi", style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+              Text(categoryName, style: TextStyle(color: finance.themeText, fontSize: 18, fontWeight: FontWeight.w900)),
+              Text("Rincian Transaksi", style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
               const SizedBox(height: 24),
               Expanded(
                 child: ListView.builder(
@@ -523,7 +532,7 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
                     return Container(
                       margin: const EdgeInsets.only(bottom: 12),
                       padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(color: Colors.white.withValues(alpha:0.05), borderRadius: BorderRadius.circular(16)),
+                      decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(16), border: Border.all(color: finance.themeBorder)),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -531,12 +540,12 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(tx.keterangan.isEmpty ? 'Tanpa Catatan' : tx.keterangan, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
-                                Text(DateFormat('dd MMM yyyy').format(DateTime.parse(tx.tanggal)), style: const TextStyle(color: Colors.white54, fontSize: 10)),
+                                Text(tx.keterangan.isEmpty ? 'Tanpa Catatan' : tx.keterangan, style: TextStyle(color: finance.themeText, fontSize: 12, fontWeight: FontWeight.bold)),
+                                Text(DateFormat('dd MMM yyyy').format(DateTime.parse(tx.tanggal)), style: TextStyle(color: finance.themeTextSub, fontSize: 10)),
                               ],
                             ),
                           ),
-                          Text(Formatters.formatCurrency(tx.nominal), style: TextStyle(color: _themeColor, fontSize: 14, fontWeight: FontWeight.w900)),
+                          Text(Formatters.formatCurrency(tx.nominal), style: TextStyle(color: finance.themeAccent, fontSize: 14, fontWeight: FontWeight.w900)),
                         ],
                       ),
                     );

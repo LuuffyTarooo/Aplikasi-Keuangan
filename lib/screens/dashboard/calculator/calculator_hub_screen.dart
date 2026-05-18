@@ -277,7 +277,8 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
           finance: finance,
           items: [
             {"label": "Harga Awal", "value": Formatters.formatCurrency(hrg), "color": finance.themeText},
-            {"label": "Diskon ($pDskn%)", "value": "-${Formatters.formatCurrency(nDskn)}", "color": Colors.greenAccent},
+            // 🟢 FIX: Warna hasil minus diskon & pajak dinetralkan ngikutin tema
+            {"label": "Diskon ($pDskn%)", "value": "-${Formatters.formatCurrency(nDskn)}", "color": Colors.green}, 
             {"label": "Pajak ($pPjk%)", "value": "+${Formatters.formatCurrency(nPjk)}", "color": finance.themeTextSub},
           ],
           totalLabel: "Total Yang Harus Dibayar",
@@ -350,7 +351,8 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
           finance: finance,
           items: [
             {"label": "Pokok Hutang (Harga - DP)", "value": Formatters.formatCurrency(pkHutang), "color": finance.themeText},
-            {"label": "Total Bunga ($nTnr Bln)", "value": "+${Formatters.formatCurrency(ttlBunga)}", "color": Colors.pinkAccent},
+            // 🟢 FIX: Warna bunga dinetralkan ke merah kalem aja biar ga neon
+            {"label": "Total Bunga ($nTnr Bln)", "value": "+${Formatters.formatCurrency(ttlBunga)}", "color": Colors.redAccent},
             {"label": "Total Keseluruhan", "value": Formatters.formatCurrency(ttlHutang), "color": finance.themeText},
           ],
           totalLabel: "Cicilan Per Bulan",

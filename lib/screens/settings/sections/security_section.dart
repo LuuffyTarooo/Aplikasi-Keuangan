@@ -2,7 +2,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:aplikasi_keuangan/providers/finance_provider.dart';
 import 'package:aplikasi_keuangan/screens/settings/widgets/setting_ui.dart';
 
 class SecuritySection extends StatefulWidget {
@@ -112,6 +115,8 @@ class _SecuritySectionState extends State<SecuritySection> {
 
   @override
   Widget build(BuildContext context) {
+    // 🟢 AUTO-SYNC: Panggil provider buat ngambil warna
+    final finance = Provider.of<FinanceProvider>(context);
     final bool isPinActive = widget.appPin != null && widget.appPin!.isNotEmpty;
 
     return SettingsGroup(
@@ -124,15 +129,15 @@ class _SecuritySectionState extends State<SecuritySection> {
           trailing: Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: isPinActive ? const Color(0xFF10B981).withValues(alpha:0.1) : Colors.white.withValues(alpha:0.05),
+              // 🟢 FLAT DESIGN: Cabut shadow, background pakai warna card
+              color: isPinActive ? Colors.green.withValues(alpha:0.1) : finance.themeCard,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: isPinActive ? const Color(0xFF10B981).withValues(alpha:0.3) : Colors.white10),
-              boxShadow: isPinActive ? [BoxShadow(color: const Color(0xFF10B981).withValues(alpha:0.2), blurRadius: 10)] : null,
+              border: Border.all(color: isPinActive ? Colors.green.withValues(alpha:0.3) : finance.themeBorder),
             ),
             child: Text(
               isPinActive ? 'AKTIF' : 'NONAKTIF',
               style: TextStyle(
-                color: isPinActive ? const Color(0xFF34D399) : Colors.white54,
+                color: isPinActive ? Colors.green : finance.themeTextSub,
                 fontSize: 9,
                 fontWeight: FontWeight.w900,
                 letterSpacing: 1.5,
@@ -153,16 +158,15 @@ class _SecuritySectionState extends State<SecuritySection> {
                       color: Colors.orange.withValues(alpha:0.1),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: Colors.orange.withValues(alpha:0.3)),
-                      boxShadow: [BoxShadow(color: Colors.orange.withValues(alpha:0.2), blurRadius: 10)],
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.timer_outlined, color: Colors.orangeAccent, size: 12),
+                        const Icon(Icons.timer_outlined, color: Colors.orange, size: 12),
                         const SizedBox(width: 4),
                         Text(
                           _cooldownTime!.toUpperCase(),
-                          style: const TextStyle(color: Colors.orangeAccent, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1.0),
+                          style: const TextStyle(color: Colors.orange, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1.0),
                         ),
                       ],
                     ),
@@ -176,8 +180,11 @@ class _SecuritySectionState extends State<SecuritySection> {
           trailing: Switch(
             value: _useFaceId,
             onChanged: (val) => _toggleFaceId(),
-            activeThumbColor: const Color(0xFFD946EF), // 🟢 FIX: Ganti ke activeThumbColor
-            activeTrackColor: const Color(0xFF9333EA).withValues(alpha: 0.5),
+            // 🟢 FIX WARNING: Ganti activeThumbColor jadi thumbColor pakai WidgetStatePropertyAll
+            thumbColor: WidgetStatePropertyAll(finance.themeAccent), 
+            activeTrackColor: finance.themeAccent.withValues(alpha: 0.3),
+            inactiveThumbColor: finance.themeTextSub,
+            inactiveTrackColor: finance.themeBorder,
           ),
         ),
 
@@ -187,8 +194,11 @@ class _SecuritySectionState extends State<SecuritySection> {
           trailing: Switch(
             value: _useFingerprint,
             onChanged: (val) => _toggleFingerprint(),
-            activeThumbColor: const Color(0xFFD946EF), // 🟢 FIX: Ganti ke activeThumbColor
-            activeTrackColor: const Color(0xFF9333EA).withValues(alpha: 0.5),
+            // 🟢 FIX WARNING: Ganti activeThumbColor jadi thumbColor pakai WidgetStatePropertyAll
+            thumbColor: WidgetStatePropertyAll(finance.themeAccent), 
+            activeTrackColor: finance.themeAccent.withValues(alpha: 0.3),
+            inactiveThumbColor: finance.themeTextSub,
+            inactiveTrackColor: finance.themeBorder,
           ),
         ),
       ],

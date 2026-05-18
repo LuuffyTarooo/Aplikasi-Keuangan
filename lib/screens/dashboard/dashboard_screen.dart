@@ -5,11 +5,11 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
 import 'package:aplikasi_keuangan/providers/finance_provider.dart';
-import 'package:aplikasi_keuangan/shared/widgets/glass_card.dart';
 import 'package:aplikasi_keuangan/core/utils/formatters.dart';
 import 'package:aplikasi_keuangan/core/utils/wallet_helper.dart';
 import 'package:aplikasi_keuangan/models/transaction_model.dart';
 import 'package:aplikasi_keuangan/models/wallet_model.dart'; 
+import 'package:aplikasi_keuangan/screens/report/widgets/history_section.dart';// 🟢 FIX: Import Layar History
 
 import 'package:aplikasi_keuangan/shared/widgets/account_manager_sheet.dart';
 import 'package:aplikasi_keuangan/shared/bottom_sheets/transaction_detail_sheet.dart';
@@ -34,8 +34,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     double totalSaldo = activeWallets.fold(0, (sum, item) => sum + item.saldoTerkini);
 
     return Scaffold(
-      // 🟢 FIX: Langsung pasang warna solid utuh, tanpa [0]
-      backgroundColor: finance.themeBg, 
+      backgroundColor: finance.themeBg, // 🟢 AUTO-SYNC: Latar Belakang Solid
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.only(bottom: 120),
@@ -51,7 +50,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   _buildCircleButton(
-                    finance: finance,
+                    finance: finance, // 🟢 FIX PARAMETER
                     child: Text(finance.currentUser?.name[0].toUpperCase() ?? 'F', style: TextStyle(color: finance.themeText, fontWeight: FontWeight.w900, fontSize: 18)),
                     onTap: () { HapticFeedback.lightImpact(); AccountManagerSheet.show(context); },
                   ),
@@ -62,10 +61,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ],
                   ),
                   _buildCircleButton(
-                    finance: finance,
-                    child: Icon(Icons.notifications_none_rounded, color: finance.themeText, size: 22),
-                    onTap: () { HapticFeedback.lightImpact(); },
-                    hasBadge: true,
+                    finance: finance, // 🟢 FIX PARAMETER
+                    child: Icon(Icons.receipt_long_rounded, color: finance.themeText, size: 22), 
+                    onTap: () { 
+                      HapticFeedback.lightImpact(); 
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryScreen()));
+                    },
+                    hasBadge: false, 
                   ),
                 ],
               ),
@@ -114,11 +116,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   final wallet = activeWallets[index];
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: GlassCard( 
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10), 
+                    child: GestureDetector(
                       onTap: () { HapticFeedback.lightImpact(); widget.onNavigate('wallets'); },
-                      child: SizedBox(
+                      child: Container( // 🟢 FIX: GlassCard diubah jadi Container solid
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10), 
                         width: 115, 
+                        decoration: BoxDecoration(
+                          color: finance.themeCard,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: finance.themeBorder),
+                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -179,7 +186,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     children: [
                       Text("Riwayat Terakhir", style: TextStyle(color: finance.themeText, fontWeight: FontWeight.w900, fontSize: 16)),
                       GestureDetector(
-                        onTap: () { HapticFeedback.lightImpact(); widget.onNavigate('report'); },
+                        onTap: () { HapticFeedback.lightImpact(); Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryScreen())); },
                         child: Text("Lihat Semua", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: finance.themeAccent)),
                       ),
                     ],
@@ -208,8 +215,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }).toList();
 
     if (recentTxs.isEmpty) {
-      return GlassCard(
+      return Container( // 🟢 FIX: GlassCard diubah jadi Container solid
         padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(16), border: Border.all(color: finance.themeBorder)),
         child: Center(child: Text("Belum ada transaksi hari ini atau kemarin.", style: TextStyle(color: finance.themeTextSub, fontWeight: FontWeight.bold, fontSize: 14))),
       );
     }
@@ -254,6 +262,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 bool isIncome = tx.jenis == 'Pemasukan';
                 bool isTransfer = tx.jenis == 'Transfer';
 
+                // 🟢 FIX: Warna Ikon ngikutin Flat Theme
                 Color iconColor = Colors.redAccent;
                 Color iconBg = Colors.redAccent.withValues(alpha:0.1);
                 IconData iconData = Icons.call_made_rounded;
@@ -276,8 +285,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 12),
-                  child: GlassCard(
-                    padding: const EdgeInsets.all(12),
+                  child: GestureDetector(
                     onTap: () {
                       HapticFeedback.lightImpact();
                       TransactionDetailSheet.show(
@@ -286,37 +294,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         onDelete: (selectedTx) {},
                       );
                     },
-                    child: Row(
-                      children: [
-                        Container(width: 48, height: 48, decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(16), border: Border.all(color: iconColor.withValues(alpha:0.2))), child: Icon(iconData, color: iconColor, size: 24)),
-                        const SizedBox(width: 16),
-                        
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text((tx.kategori.isEmpty ? tx.jenis : tx.kategori).toUpperCase(), style: TextStyle(color: finance.themeText, fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 0.5)),
-                              const SizedBox(height: 4),
-                              Text(displayKet, style: TextStyle(color: finance.themeTextSub, fontWeight: FontWeight.bold, fontSize: 11), maxLines: 1, overflow: TextOverflow.ellipsis),
-                            ],
-                          ),
-                        ),
-                        
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text("$prefix${Formatters.formatCurrency(tx.nominal)}", style: TextStyle(color: isIncome ? Colors.greenAccent : (isTransfer ? finance.themeAccent : finance.themeText), fontWeight: FontWeight.w900, fontSize: 14)),
-                            const SizedBox(height: 6),
-                            Row(
+                    child: Container( // 🟢 FIX: GlassCard diubah jadi Container solid
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(16), border: Border.all(color: finance.themeBorder)),
+                      child: Row(
+                        children: [
+                          Container(width: 48, height: 48, decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(16), border: Border.all(color: iconColor.withValues(alpha:0.2))), child: Icon(iconData, color: iconColor, size: 24)),
+                          const SizedBox(width: 16),
+                          
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                WalletHelper.getWalletLogo(dompetName, size: 'sm'),
-                                const SizedBox(width: 4),
-                                Text(dompetName, style: TextStyle(color: finance.themeTextSub, fontWeight: FontWeight.bold, fontSize: 10)),
+                                Text((tx.kategori.isEmpty ? tx.jenis : tx.kategori).toUpperCase(), style: TextStyle(color: finance.themeText, fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 0.5)),
+                                const SizedBox(height: 4),
+                                Text(displayKet, style: TextStyle(color: finance.themeTextSub, fontWeight: FontWeight.bold, fontSize: 11), maxLines: 1, overflow: TextOverflow.ellipsis),
                               ],
                             ),
-                          ],
-                        ),
-                      ],
+                          ),
+                          
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text("$prefix${Formatters.formatCurrency(tx.nominal)}", style: TextStyle(color: isIncome ? Colors.greenAccent : (isTransfer ? finance.themeAccent : finance.themeText), fontWeight: FontWeight.w900, fontSize: 14)),
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  WalletHelper.getWalletLogo(dompetName, size: 'sm'),
+                                  const SizedBox(width: 4),
+                                  Text(dompetName, style: TextStyle(color: finance.themeTextSub, fontWeight: FontWeight.bold, fontSize: 10)),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 );
@@ -329,6 +341,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   // --- WIDGET HELPERS ---
+  // 🟢 FIX: Fungsi helper diperbarui
   Widget _buildCircleButton({required FinanceProvider finance, required Widget child, required VoidCallback onTap, bool hasBadge = false}) {
     return GestureDetector(
       onTap: onTap,

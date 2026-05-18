@@ -1,6 +1,9 @@
 // lib/shared/layouts/main_layout.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+
+import 'package:aplikasi_keuangan/providers/finance_provider.dart';
 
 class MainLayout extends StatefulWidget {
   final Widget child;
@@ -68,29 +71,31 @@ class _MainLayoutState extends State<MainLayout> {
     widget.onQuickAdd();
   }
 
-@override
+  @override
   Widget build(BuildContext context) {
+    // 🟢 AUTO-SYNC
+    final finance = Provider.of<FinanceProvider>(context);
+
     return Scaffold(
-      // 🟢 UBAH BARIS INI BIAR GAK PUTIH LAGI:
-      backgroundColor: const Color(0xFF05010D), 
+      backgroundColor: finance.themeBg, // 🟢 Murni ngikutin latar tema!
       extendBody: true,
       body: widget.child,
       bottomNavigationBar: widget.isVoiceActive
           ? null
-          : _buildCustomBottomNav(),
+          : _buildCustomBottomNav(finance),
     );
   }
 
-  Widget _buildCustomBottomNav() {
+  Widget _buildCustomBottomNav(FinanceProvider finance) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF05010D).withValues(alpha:0.9),
-        border: const Border(top: BorderSide(color: Colors.white10)),
+        color: finance.themeBg.withValues(alpha:0.95), // 🟢 Latar Navigasi Solid adaptif
+        border: Border(top: BorderSide(color: finance.themeBorder)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha:0.3),
-            blurRadius: 40,
-            offset: const Offset(0, -10),
+            color: Colors.black.withValues(alpha:0.1), // Shadow tipis aja biar flat
+            blurRadius: 20,
+            offset: const Offset(0, -5),
           )
         ],
       ),
@@ -98,8 +103,8 @@ class _MainLayoutState extends State<MainLayout> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildNavItem(Icons.home_rounded, 'HOME', 0),
-          _buildNavItem(Icons.track_changes_rounded, 'BUDGET', 1),
+          _buildNavItem(Icons.home_rounded, 'HOME', 0, finance),
+          _buildNavItem(Icons.track_changes_rounded, 'BUDGET', 1, finance),
           
           // --- TOMBOL TENGAH (GESTURE) ---
           GestureDetector(
@@ -124,13 +129,14 @@ class _MainLayoutState extends State<MainLayout> {
                       height: 48,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: _isHoveringMic ? const Color(0xFF9333EA) : const Color(0xFF161B22),
-                        border: Border.all(color: Colors.white10),
+                        // 🟢 FIX: Ngikutin tema aksen pas hover
+                        color: _isHoveringMic ? finance.themeAccent : finance.themeCard,
+                        border: Border.all(color: finance.themeBorder),
                         boxShadow: _isHoveringMic ? [
-                          BoxShadow(color: const Color(0xFF9333EA).withValues(alpha:0.5), blurRadius: 15)
+                          BoxShadow(color: finance.themeAccent.withValues(alpha:0.5), blurRadius: 15)
                         ] : null,
                       ),
-                      child: Icon(Icons.mic, color: _isHoveringMic ? Colors.white : Colors.white70),
+                      child: Icon(Icons.mic, color: _isHoveringMic ? Colors.white : finance.themeTextSub),
                     ),
                   ),
                 ),
@@ -139,34 +145,35 @@ class _MainLayoutState extends State<MainLayout> {
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   transform: Matrix4.diagonal3Values(
-  _isLongPressing ? 0.9 : 1.0, // Skala Sumbu X
-  _isLongPressing ? 0.9 : 1.0, // Skala Sumbu Y
-  1.0,                         // Skala Sumbu Z (Tetap Normal)
-),
+                    _isLongPressing ? 0.9 : 1.0, 
+                    _isLongPressing ? 0.9 : 1.0, 
+                    1.0, 
+                  ),
                   transformAlignment: Alignment.center,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: _isLongPressing ? const Color(0xFF161B22) : const Color(0xFF9333EA),
+                    // 🟢 FIX: Tombol utama ngikutin Aksen
+                    color: _isLongPressing ? finance.themeCard : finance.themeAccent,
                     borderRadius: BorderRadius.circular(24),
-                    border: _isLongPressing ? Border.all(color: Colors.white10) : null,
+                    border: _isLongPressing ? Border.all(color: finance.themeBorder) : null,
                     boxShadow: _isLongPressing ? null : [
-                      BoxShadow(color: const Color(0xFF9333EA).withValues(alpha:0.4), blurRadius: 20)
+                      BoxShadow(color: finance.themeAccent.withValues(alpha:0.4), blurRadius: 10)
                     ],
                   ),
-                  child: const Icon(Icons.add_circle_outline, color: Colors.white, size: 28),
+                  child: Icon(Icons.add_circle_outline, color: _isLongPressing ? finance.themeTextSub : Colors.white, size: 28),
                 ),
               ],
             ),
           ),
 
-          _buildNavItem(Icons.pie_chart_rounded, 'LAPORAN', 2),
-          _buildNavItem(Icons.settings_rounded, 'SETTINGS', 3),
+          _buildNavItem(Icons.pie_chart_rounded, 'LAPORAN', 2, finance),
+          _buildNavItem(Icons.settings_rounded, 'SETTINGS', 3, finance),
         ],
       ),
     );
   }
 
-  Widget _buildNavItem(IconData icon, String label, int index) {
+  Widget _buildNavItem(IconData icon, String label, int index, FinanceProvider finance) {
     final isActive = widget.currentIndex == index;
     return GestureDetector(
       onTap: () => widget.onNavigate(index),
@@ -177,13 +184,13 @@ class _MainLayoutState extends State<MainLayout> {
             duration: const Duration(milliseconds: 200),
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: isActive ? const Color(0xFF9333EA).withValues(alpha:0.1) : Colors.transparent,
+              color: isActive ? finance.themeAccent.withValues(alpha:0.1) : Colors.transparent,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
               icon,
               size: 24,
-              color: isActive ? const Color(0xFFA855F7) : Colors.white54,
+              color: isActive ? finance.themeAccent : finance.themeTextSub, // 🟢 AUTO-SYNC
             ),
           ),
           const SizedBox(height: 4),
@@ -193,7 +200,7 @@ class _MainLayoutState extends State<MainLayout> {
               fontSize: 9,
               fontWeight: FontWeight.w900,
               letterSpacing: 1.5,
-              color: isActive ? const Color(0xFFA855F7) : Colors.white54,
+              color: isActive ? finance.themeAccent : finance.themeTextSub, // 🟢 AUTO-SYNC
             ),
           ),
         ],

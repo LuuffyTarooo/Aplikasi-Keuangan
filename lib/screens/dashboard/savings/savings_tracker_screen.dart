@@ -6,7 +6,6 @@ import 'package:provider/provider.dart';
 import 'package:aplikasi_keuangan/providers/finance_provider.dart';
 import 'package:aplikasi_keuangan/models/transaction_model.dart';
 import 'package:aplikasi_keuangan/core/utils/formatters.dart';
-import 'package:aplikasi_keuangan/shared/widgets/glass_card.dart';
 import 'package:aplikasi_keuangan/shared/widgets/custom_button.dart';
 import 'package:aplikasi_keuangan/shared/widgets/custom_numpad.dart';
 import 'package:aplikasi_keuangan/models/saving_model.dart'; 
@@ -28,10 +27,10 @@ class _SavingsScreenState extends State<SavingsScreen> {
           children: [
             Icon(isError ? Icons.gpp_bad_rounded : isWarning ? Icons.warning_amber_rounded : Icons.check_circle_rounded, color: Colors.white),
             const SizedBox(width: 8),
-            Expanded(child: Text(message, style: const TextStyle(fontWeight: FontWeight.bold))),
+            Expanded(child: Text(message, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white))),
           ],
         ),
-        backgroundColor: isError ? Colors.pinkAccent : isWarning ? Colors.amber : Colors.green,
+        backgroundColor: isError ? Colors.redAccent : isWarning ? Colors.orangeAccent : Colors.green,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
@@ -53,11 +52,11 @@ class _SavingsScreenState extends State<SavingsScreen> {
             return Container(
               height: MediaQuery.of(context).size.height * 0.7,
               padding: const EdgeInsets.all(24),
-              decoration: const BoxDecoration(color: Color(0xFF161B22), borderRadius: BorderRadius.vertical(top: Radius.circular(32)), border: Border(top: BorderSide(color: Colors.white10))),
+              decoration: BoxDecoration(color: finance.themeBg, borderRadius: const BorderRadius.vertical(top: Radius.circular(32)), border: Border(top: BorderSide(color: finance.themeBorder))),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("Bikin Target Baru", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
+                  Text("Bikin Target Baru", style: TextStyle(color: finance.themeText, fontSize: 20, fontWeight: FontWeight.w900)),
                   const SizedBox(height: 24),
 
                   Expanded(
@@ -66,23 +65,23 @@ class _SavingsScreenState extends State<SavingsScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text("NAMA IMPIAN/TARGET", style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+                          Text("NAMA IMPIAN/TARGET", style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
                           const SizedBox(height: 8),
                           TextField(
                             onChanged: (val) => formName = val,
-                            style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                            style: TextStyle(color: finance.themeText, fontSize: 14, fontWeight: FontWeight.bold),
                             decoration: InputDecoration(
-                              filled: true, fillColor: Colors.white.withValues(alpha: 0.05),
-                              hintText: "Misal: Beli Knalpot Beat", hintStyle: const TextStyle(color: Colors.white30),
+                              filled: true, fillColor: finance.themeCard,
+                              hintText: "Misal: Beli Knalpot Beat", hintStyle: TextStyle(color: finance.themeTextSub.withValues(alpha:0.5)),
                               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Colors.white10)),
-                              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Colors.white10)),
-                              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFF9333EA))),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: finance.themeBorder)),
+                              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: finance.themeBorder)),
+                              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: finance.themeAccent)),
                             ),
                           ),
                           const SizedBox(height: 24),
 
-                          const Center(child: Text("TARGET NOMINAL", style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5))),
+                          Center(child: Text("TARGET NOMINAL", style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5))),
                           const SizedBox(height: 8),
                           GestureDetector(
                             onTap: () {
@@ -93,15 +92,15 @@ class _SavingsScreenState extends State<SavingsScreen> {
                             },
                             child: Container(
                               width: double.infinity, padding: const EdgeInsets.all(24),
-                              decoration: BoxDecoration(color: const Color(0xFF9333EA).withValues(alpha:0.1), borderRadius: BorderRadius.circular(24), border: Border.all(color: const Color(0xFF9333EA).withValues(alpha:0.3))),
+                              decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(24), border: Border.all(color: finance.themeBorder)),
                               child: Text(
                                 formTarget == 0 ? "Rp 0" : Formatters.formatCurrency(formTarget),
-                                textAlign: TextAlign.center, style: const TextStyle(color: Color(0xFFD946EF), fontSize: 32, fontWeight: FontWeight.w900),
+                                textAlign: TextAlign.center, style: TextStyle(color: finance.themeAccent, fontSize: 32, fontWeight: FontWeight.w900),
                               ),
                             ),
                           ),
                           const SizedBox(height: 8),
-                          const Center(child: Text("Ketuk kotak di atas untuk mengisi angka", style: TextStyle(color: Colors.white30, fontSize: 10))),
+                          Center(child: Text("Ketuk kotak di atas untuk mengisi angka", style: TextStyle(color: finance.themeTextSub.withValues(alpha: 0.5), fontSize: 10))),
                         ],
                       ),
                     ),
@@ -113,7 +112,6 @@ class _SavingsScreenState extends State<SavingsScreen> {
                       if (formName.isEmpty) return _showToast("Nama tabungannya diisi dulu dong!", isWarning: true);
                       if (formTarget <= 0) return _showToast("Target tabungannya berapa?", isWarning: true);
 
-                      // 🟢 AKSI GLOBAL: Simpan ke provider biar permanen
                       finance.addSavingGoal(formName, formTarget); 
                       Navigator.pop(context);
                       _showToast("Target tabungan berhasil dibuat!");
@@ -136,7 +134,8 @@ class _SavingsScreenState extends State<SavingsScreen> {
     String txTanggal = DateTime.now().toIso8601String();
     String selectedDompet = '';
 
-    Color themeColor = isNabung ? Colors.greenAccent : Colors.amberAccent;
+    // 🟢 Warna Modal Transaksi: Nabung ngikut Aksen, Tarik warna Oranye
+    Color themeColor = isNabung ? finance.themeAccent : Colors.orangeAccent;
 
     showModalBottomSheet(
       context: context,
@@ -148,19 +147,19 @@ class _SavingsScreenState extends State<SavingsScreen> {
             return Container(
               height: MediaQuery.of(context).size.height * 0.85,
               padding: const EdgeInsets.all(24),
-              decoration: const BoxDecoration(color: Color(0xFF161B22), borderRadius: BorderRadius.vertical(top: Radius.circular(32)), border: Border(top: BorderSide(color: Colors.white10))),
+              decoration: BoxDecoration(color: finance.themeBg, borderRadius: const BorderRadius.vertical(top: Radius.circular(32)), border: Border(top: BorderSide(color: finance.themeBorder))),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(isNabung ? "Isi Tabungan" : "Tarik Tabungan", style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
-                  Text(goal.name.toUpperCase(), style: const TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                  Text(isNabung ? "Isi Tabungan" : "Tarik Tabungan", style: TextStyle(color: finance.themeText, fontSize: 20, fontWeight: FontWeight.w900)),
+                  Text(goal.name.toUpperCase(), style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
                   const SizedBox(height: 32),
 
                   Expanded(
                     child: SingleChildScrollView(
                       child: Column(
                         children: [
-                          const Text("NOMINAL & CATATAN", style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+                          Text("NOMINAL & CATATAN", style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
                           const SizedBox(height: 8),
                           GestureDetector(
                             onTap: () {
@@ -175,23 +174,23 @@ class _SavingsScreenState extends State<SavingsScreen> {
                               child: Column(
                                 children: [
                                   Text(txNominal == 0 ? "Rp 0" : Formatters.formatCurrency(txNominal), style: TextStyle(color: themeColor, fontSize: 32, fontWeight: FontWeight.w900)),
-                                  if (txCatatan.isNotEmpty) ...[const SizedBox(height: 8), Text("📝 $txCatatan", style: const TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold))],
+                                  if (txCatatan.isNotEmpty) ...[const SizedBox(height: 8), Text("📝 $txCatatan", style: TextStyle(color: finance.themeTextSub, fontSize: 12, fontWeight: FontWeight.bold))],
                                 ],
                               ),
                             ),
                           ),
                           const SizedBox(height: 24),
 
-                          Text(isNabung ? "AMBIL DARI DOMPET MANA?" : "PINDAHKAN KE DOMPET MANA?", style: const TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+                          Text(isNabung ? "AMBIL DARI DOMPET MANA?" : "PINDAHKAN KE DOMPET MANA?", style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
                           const SizedBox(height: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                            decoration: BoxDecoration(color: Colors.white.withValues(alpha:0.05), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white10)),
+                            decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(16), border: Border.all(color: finance.themeBorder)),
                             child: DropdownButtonHideUnderline(
                               child: DropdownButton<String>(
                                 value: selectedDompet.isEmpty ? null : selectedDompet,
-                                hint: const Text("Pilih dompet...", style: TextStyle(color: Colors.white30, fontSize: 14, fontWeight: FontWeight.bold)),
-                                isExpanded: true, dropdownColor: const Color(0xFF161B22), icon: const Icon(Icons.account_balance_wallet_rounded, color: Colors.white54), style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                                hint: Text("Pilih dompet...", style: TextStyle(color: finance.themeTextSub.withValues(alpha: 0.5), fontSize: 14, fontWeight: FontWeight.bold)),
+                                isExpanded: true, dropdownColor: finance.themeCard, icon: Icon(Icons.account_balance_wallet_rounded, color: finance.themeTextSub), style: TextStyle(color: finance.themeText, fontSize: 14, fontWeight: FontWeight.bold),
                                 items: finance.mySumberDana.map((d) => DropdownMenuItem(value: d.idDana, child: Text("${d.namaAset} (Sisa: ${Formatters.formatCurrency(d.saldoTerkini)})"))).toList(),
                                 onChanged: (v) { HapticFeedback.lightImpact(); setModalState(() => selectedDompet = v!); },
                               ),
@@ -220,7 +219,6 @@ class _SavingsScreenState extends State<SavingsScreen> {
                           keterangan: txCatatan.isNotEmpty ? txCatatan : fallbackCatatan, tanggal: txTanggal, userId: finance.currentUser!.id,
                         ));
 
-                        // 🟢 AKSI GLOBAL: Update progress tabungan di provider
                         finance.updateSavingProgress(goal.id, txNominal, true);
                         _showToast("Uang berhasil ditabung!");
                       } else {
@@ -232,7 +230,6 @@ class _SavingsScreenState extends State<SavingsScreen> {
                           keterangan: txCatatan.isNotEmpty ? txCatatan : fallbackCatatan, tanggal: txTanggal, userId: finance.currentUser!.id,
                         ));
 
-                        // 🟢 AKSI GLOBAL: Kurangi progress tabungan di provider
                         finance.updateSavingProgress(goal.id, txNominal, false);
                         _showToast("Uang berhasil ditarik!");
                       }
@@ -254,19 +251,18 @@ class _SavingsScreenState extends State<SavingsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF161B22),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: const BorderSide(color: Colors.white10)),
+        backgroundColor: finance.themeBg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: BorderSide(color: finance.themeBorder)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.pinkAccent.withValues(alpha:0.1), shape: BoxShape.circle), child: const Icon(Icons.delete_outline_rounded, color: Colors.pinkAccent, size: 32)),
+            Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.redAccent.withValues(alpha:0.1), shape: BoxShape.circle), child: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 32)),
             const SizedBox(height: 16),
-            const Text("Hapus Target?", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900)),
+            Text("Hapus Target?", style: TextStyle(color: finance.themeText, fontSize: 18, fontWeight: FontWeight.w900)),
             const SizedBox(height: 8),
-            const Text("Yakin mau hapus target tabungan ini?", textAlign: TextAlign.center, style: TextStyle(color: Colors.white54, fontSize: 12)),
+            Text("Yakin mau hapus target tabungan ini?", textAlign: TextAlign.center, style: TextStyle(color: finance.themeTextSub, fontSize: 12)),
             const SizedBox(height: 24),
             CustomButton(text: "Ya, Hapus", variant: ButtonVariant.danger, fullWidth: true, onPressed: () {
-              // 🟢 AKSI GLOBAL: Hapus dari provider global
               finance.deleteSavingGoal(goalId); 
               Navigator.pop(context);
               _showToast("Target tabungan dihapus.");
@@ -282,7 +278,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
   @override
   Widget build(BuildContext context) {
     final finance = Provider.of<FinanceProvider>(context);
-    final mySavingsData = finance.mySavings; // 🟢 Baca data tabungan dari provider global
+    final mySavingsData = finance.mySavings; 
 
     // Kalkulasi Total
     double totalTerkumpul = mySavingsData.fold(0, (sum, g) => sum + g.current);
@@ -290,7 +286,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
     double overallProgress = totalTarget > 0 ? (totalTerkumpul / totalTarget) * 100 : 0;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF05010D),
+      backgroundColor: finance.themeBg, // 🟢 AUTO-SYNC
       body: SafeArea(
         child: Column(
           children: [
@@ -301,12 +297,12 @@ class _SavingsScreenState extends State<SavingsScreen> {
                 children: [
                   GestureDetector(
                     onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); },
-                    child: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: Colors.white.withValues(alpha:0.05), shape: BoxShape.circle), child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20)),
+                    child: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: finance.themeCard, shape: BoxShape.circle, border: Border.all(color: finance.themeBorder)), child: Icon(Icons.arrow_back_ios_new_rounded, color: finance.themeTextSub, size: 20)),
                   ),
                   const SizedBox(width: 16),
-                  const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text("Tabungan", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900)),
-                    Text("PINDAH KANTONG ASET", style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                  Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text("Tabungan", style: TextStyle(color: finance.themeText, fontSize: 24, fontWeight: FontWeight.w900)),
+                    Text("PINDAH KANTONG ASET", style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
                   ]),
                 ],
               ),
@@ -318,41 +314,41 @@ class _SavingsScreenState extends State<SavingsScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
                   children: [
-                    // --- KARTU DASHBOARD UTAMA ---
+                    // --- KARTU DASHBOARD UTAMA (Flat Design) ---
                     Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: Colors.greenAccent.withValues(alpha:0.1), borderRadius: BorderRadius.circular(32),
-                        border: Border.all(color: Colors.greenAccent.withValues(alpha:0.2)),
-                        boxShadow: [BoxShadow(color: Colors.greenAccent.withValues(alpha:0.1), blurRadius: 30)],
+                        color: finance.themeAccent.withValues(alpha:0.1), // 🟢 Pakai Aksen
+                        borderRadius: BorderRadius.circular(32),
+                        border: Border.all(color: finance.themeAccent.withValues(alpha:0.2)),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
                             children: [
-                              Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: Colors.greenAccent.withValues(alpha:0.2), shape: BoxShape.circle), child: const Icon(Icons.savings_rounded, color: Colors.greenAccent, size: 16)),
+                              Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: finance.themeAccent.withValues(alpha:0.2), shape: BoxShape.circle), child: Icon(Icons.savings_rounded, color: finance.themeAccent, size: 16)),
                               const SizedBox(width: 12),
-                              const Text("TOTAL TERSIMPAN", style: TextStyle(color: Colors.greenAccent, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+                              Text("TOTAL TERSIMPAN", style: TextStyle(color: finance.themeAccent, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
                             ],
                           ),
                           const SizedBox(height: 16),
-                          Text(Formatters.formatCurrency(totalTerkumpul), style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.w900, shadows: [Shadow(color: Colors.greenAccent, blurRadius: 15)])),
+                          Text(Formatters.formatCurrency(totalTerkumpul), style: TextStyle(color: finance.themeText, fontSize: 36, fontWeight: FontWeight.w900)),
                           const SizedBox(height: 24),
                           
                           Container(
-                            padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.black.withValues(alpha:0.3), borderRadius: BorderRadius.circular(16)),
+                            padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: finance.themeBg, borderRadius: BorderRadius.circular(16), border: Border.all(color: finance.themeBorder)),
                             child: Column(
                               children: [
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    const Text("Progress Keseluruhan", style: TextStyle(color: Colors.greenAccent, fontSize: 10, fontWeight: FontWeight.bold)),
-                                    Text("${overallProgress.round()}% dari ${Formatters.formatCurrency(totalTarget)}", style: const TextStyle(color: Colors.greenAccent, fontSize: 10, fontWeight: FontWeight.bold)),
+                                    Text("Progress Keseluruhan", style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.bold)),
+                                    Text("${overallProgress.round()}% dari ${Formatters.formatCurrency(totalTarget)}", style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.bold)),
                                   ],
                                 ),
                                 const SizedBox(height: 12),
-                                LinearProgressIndicator(value: (overallProgress / 100).clamp(0.0, 1.0), backgroundColor: Colors.white10, color: Colors.greenAccent, minHeight: 8, borderRadius: BorderRadius.circular(4)),
+                                LinearProgressIndicator(value: (overallProgress / 100).clamp(0.0, 1.0), backgroundColor: finance.themeBorder, color: finance.themeAccent, minHeight: 8, borderRadius: BorderRadius.circular(4)),
                               ],
                             ),
                           )
@@ -365,21 +361,21 @@ class _SavingsScreenState extends State<SavingsScreen> {
                     // --- PESAN INSIGHT ---
                     Container(
                       padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(color: Colors.lightBlueAccent.withValues(alpha:0.1), borderRadius: BorderRadius.circular(24), border: Border.all(color: Colors.lightBlueAccent.withValues(alpha:0.3))),
+                      decoration: BoxDecoration(color: Colors.blueAccent.withValues(alpha:0.1), borderRadius: BorderRadius.circular(24), border: Border.all(color: Colors.blueAccent.withValues(alpha:0.3))),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.info_outline_rounded, color: Colors.lightBlueAccent, size: 20),
+                          const Icon(Icons.info_outline_rounded, color: Colors.blueAccent, size: 20),
                           const SizedBox(width: 12),
                           Expanded(
                             child: RichText(
-                              text: const TextSpan(
-                                style: TextStyle(color: Colors.white70, fontSize: 12, height: 1.5),
+                              text: TextSpan(
+                                style: TextStyle(color: finance.themeTextSub, fontSize: 12, height: 1.5),
                                 children: [
-                                  TextSpan(text: "Insight: ", style: TextStyle(color: Colors.lightBlueAccent, fontWeight: FontWeight.bold)),
-                                  TextSpan(text: "Uang di tabungan ini adalah kantong virtual. Saat lu nabung, saldo dompet utama bakal berkurang biar lu nggak ngerasa kebanyakan duit, dan bakal kecatat di riwayat sebagai "),
-                                  TextSpan(text: "Pengeluaran/Transfer", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                  TextSpan(text: "."),
+                                  const TextSpan(text: "Insight: ", style: TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold)),
+                                  const TextSpan(text: "Uang di tabungan ini adalah kantong virtual. Saat lu nabung, saldo dompet utama bakal berkurang biar lu nggak ngerasa kebanyakan duit, dan bakal kecatat di riwayat sebagai "),
+                                  TextSpan(text: "Pengeluaran/Transfer", style: TextStyle(color: finance.themeText, fontWeight: FontWeight.bold)),
+                                  const TextSpan(text: "."),
                                 ],
                               ),
                             ),
@@ -394,15 +390,15 @@ class _SavingsScreenState extends State<SavingsScreen> {
                     if (mySavingsData.isEmpty)
                       Container(
                         padding: const EdgeInsets.symmetric(vertical: 40),
-                        decoration: BoxDecoration(color: Colors.white.withValues(alpha:0.05), borderRadius: BorderRadius.circular(24), border: Border.all(color: Colors.white10, style: BorderStyle.solid)),
-                        child: const Center(
+                        decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(24), border: Border.all(color: finance.themeBorder)),
+                        child: Center(
                           child: Column(
                             children: [
-                              Icon(Icons.track_changes_rounded, color: Colors.white30, size: 40),
-                              SizedBox(height: 16),
-                              Text("Belum Ada Target", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900)),
-                              SizedBox(height: 8),
-                              Text("Mulai pisahin duit dan bikin target lu di bawah!", style: TextStyle(color: Colors.white54, fontSize: 12)),
+                              Icon(Icons.track_changes_rounded, color: finance.themeTextSub.withValues(alpha:0.5), size: 40),
+                              const SizedBox(height: 16),
+                              Text("Belum Ada Target", style: TextStyle(color: finance.themeText, fontSize: 16, fontWeight: FontWeight.w900)),
+                              const SizedBox(height: 8),
+                              Text("Mulai pisahin duit dan bikin target lu di bawah!", style: TextStyle(color: finance.themeTextSub, fontSize: 12)),
                             ],
                           ),
                         ),
@@ -411,14 +407,16 @@ class _SavingsScreenState extends State<SavingsScreen> {
                       ...mySavingsData.map((goal) {
                         double progress = (goal.current / goal.target) * 100;
                         bool isFull = progress >= 100;
-                        Color accentColor = isFull ? Colors.greenAccent : Colors.tealAccent;
+                        Color accentColor = isFull ? Colors.green : finance.themeAccent;
 
-                        return GlassCard(
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 16),
                           padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(24), border: Border.all(color: finance.themeBorder)),
                           child: Column(
                             children: [
                               if (isFull)
-                                Container(height: 4, decoration: const BoxDecoration(color: Colors.greenAccent, borderRadius: BorderRadius.vertical(top: Radius.circular(16)))),
+                                Container(height: 4, decoration: const BoxDecoration(color: Colors.green, borderRadius: BorderRadius.vertical(top: Radius.circular(16)))),
                               
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -429,36 +427,36 @@ class _SavingsScreenState extends State<SavingsScreen> {
                                       children: [
                                         Row(
                                           children: [
-                                            Expanded(child: Text(goal.name, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900), maxLines: 1, overflow: TextOverflow.ellipsis)),
-                                            if (isFull) const Icon(Icons.check_circle_rounded, color: Colors.greenAccent, size: 16),
+                                            Expanded(child: Text(goal.name, style: TextStyle(color: finance.themeText, fontSize: 16, fontWeight: FontWeight.w900), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                                            if (isFull) const Icon(Icons.check_circle_rounded, color: Colors.green, size: 16),
                                           ],
                                         ),
                                         const SizedBox(height: 8),
                                         Row(
                                           children: [
-                                            Text("TARGET: ${Formatters.formatCurrency(goal.target)}", style: const TextStyle(color: Colors.white54, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
+                                            Text("TARGET: ${Formatters.formatCurrency(goal.target)}", style: TextStyle(color: finance.themeTextSub, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
                                             if (isFull) ...[
                                               const SizedBox(width: 8),
-                                              Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2), decoration: BoxDecoration(color: Colors.greenAccent.withValues(alpha:0.2), borderRadius: BorderRadius.circular(4), border: Border.all(color: Colors.greenAccent.withValues(alpha:0.5))), child: const Text("TERCAPAI 🎉", style: TextStyle(color: Colors.greenAccent, fontSize: 8, fontWeight: FontWeight.w900))),
+                                              Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2), decoration: BoxDecoration(color: Colors.green.withValues(alpha:0.2), borderRadius: BorderRadius.circular(4), border: Border.all(color: Colors.green.withValues(alpha:0.5))), child: const Text("TERCAPAI 🎉", style: TextStyle(color: Colors.green, fontSize: 8, fontWeight: FontWeight.w900))),
                                             ]
                                           ],
                                         )
                                       ],
                                     ),
                                   ),
-                                  Text(Formatters.formatCurrency(goal.current), style: TextStyle(color: isFull ? Colors.greenAccent : Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
+                                  Text(Formatters.formatCurrency(goal.current), style: TextStyle(color: isFull ? Colors.green : finance.themeText, fontSize: 20, fontWeight: FontWeight.w900)),
                                 ],
                               ),
                               const SizedBox(height: 16),
                               
-                              LinearProgressIndicator(value: (progress / 100).clamp(0.0, 1.0), backgroundColor: Colors.black26, color: accentColor, minHeight: 8, borderRadius: BorderRadius.circular(4)),
+                              LinearProgressIndicator(value: (progress / 100).clamp(0.0, 1.0), backgroundColor: finance.themeBorder, color: accentColor, minHeight: 8, borderRadius: BorderRadius.circular(4)),
                               const SizedBox(height: 16),
 
                               Row(
                                 children: [
                                   GestureDetector(
                                     onTap: () => _confirmDelete(goal.id, finance),
-                                    child: Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), decoration: BoxDecoration(color: Colors.pinkAccent.withValues(alpha:0.1), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.pinkAccent.withValues(alpha:0.3))), child: const Icon(Icons.delete_outline_rounded, color: Colors.pinkAccent, size: 20)),
+                                    child: Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), decoration: BoxDecoration(color: finance.themeBg, borderRadius: BorderRadius.circular(16), border: Border.all(color: finance.themeBorder)), child: Icon(Icons.delete_outline_rounded, color: finance.themeTextSub, size: 20)),
                                   ),
                                   const SizedBox(width: 12),
                                   Expanded(

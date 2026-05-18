@@ -7,7 +7,6 @@ import '../../providers/finance_provider.dart';
 import 'widgets/summary_bar.dart';
 import 'widgets/analytics_section.dart';
 import 'widgets/calendar_pnl.dart';
-import 'widgets/history_section.dart';
 import 'dialogs/export_dialog.dart';
 
 class ReportHubScreen extends StatefulWidget {
@@ -34,10 +33,11 @@ class _ReportHubScreenState extends State<ReportHubScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // 🟢 AUTO-SYNC: Panggil provider tema
     final finance = Provider.of<FinanceProvider>(context);
 
     return Scaffold(
-      backgroundColor: Colors.transparent, // Background diurus MainLayout
+      backgroundColor: Colors.transparent, // Background diurus MainLayout biar nyatu
       body: SafeArea(
         bottom: false, 
         child: Column(
@@ -52,13 +52,12 @@ class _ReportHubScreenState extends State<ReportHubScreen> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         "Laporan",
                         style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                          shadows: [Shadow(color: Color(0xFFA855F7), blurRadius: 10)],
+                          color: finance.themeText, // 🟢 AUTO-SYNC
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -67,29 +66,26 @@ class _ReportHubScreenState extends State<ReportHubScreen> {
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w900,
-                          color: Colors.white.withValues(alpha:0.5),
+                          color: finance.themeTextSub, // 🟢 AUTO-SYNC
                           letterSpacing: 1.5,
                         ),
                       ),
                     ],
                   ),
                   
-                  // Tombol Export Glassmorphism
+                  // 🟢 AUTO-SYNC: Tombol Export Flat Design
                   GestureDetector(
                     onTap: _openExportModal,
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF9333EA).withValues(alpha:0.1),
+                        color: finance.themeCard,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: const Color(0xFFA855F7).withValues(alpha:0.3)),
-                        boxShadow: [
-                          BoxShadow(color: const Color(0xFFA855F7).withValues(alpha:0.2), blurRadius: 15)
-                        ],
+                        border: Border.all(color: finance.themeBorder),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.download_rounded,
-                        color: Color(0xFFA855F7),
+                        color: finance.themeAccent,
                         size: 24,
                       ),
                     ),
@@ -120,7 +116,8 @@ class _ReportHubScreenState extends State<ReportHubScreen> {
                     ),
                     const SizedBox(height: 32),
 
-                    // 3. Kalender Arus Kas
+                    // 3. Kalender Arus Kas 
+                    // 🟢 FIX: Diisi lagi parameternya biar nggak merah!
                     CalendarPnlSection(
                       transaksi: finance.myTransaksi,
                       currentDate: _currentDate,
@@ -128,10 +125,6 @@ class _ReportHubScreenState extends State<ReportHubScreen> {
                     ),
                     const SizedBox(height: 32),
 
-                    // 4. Daftar Riwayat Transaksi (Search & Filter ada di dalam sini)
-                    HistorySection(
-                      transaksi: finance.myTransaksi,
-                    ),
                   ],
                 ),
               ),

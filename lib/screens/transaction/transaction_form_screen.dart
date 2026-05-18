@@ -1,5 +1,4 @@
 // lib/screens/transaction/transaction_form_screen.dart
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -120,7 +119,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> with Sing
           builder: (context, setSheetState) {
             return Container(
               height: MediaQuery.of(context).size.height * 0.9,
-              decoration: const BoxDecoration(color: Color(0xFF161B22), borderRadius: BorderRadius.vertical(top: Radius.circular(32))),
+              decoration: BoxDecoration(color: finance.themeBg, borderRadius: const BorderRadius.vertical(top: Radius.circular(32)), border: Border(top: BorderSide(color: finance.themeBorder))),
               child: Column(
                 children: [
                   Padding(
@@ -128,10 +127,10 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> with Sing
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text("Buat Dompet Baru", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
+                        Text("Buat Dompet Baru", style: TextStyle(color: finance.themeText, fontSize: 20, fontWeight: FontWeight.w900)),
                         GestureDetector(
                           onTap: () => Navigator.pop(context),
-                          child: Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: Colors.white.withValues(alpha:0.05), shape: BoxShape.circle), child: const Icon(Icons.close_rounded, color: Colors.white, size: 20)),
+                          child: Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: finance.themeCard, shape: BoxShape.circle, border: Border.all(color: finance.themeBorder)), child: Icon(Icons.close_rounded, color: finance.themeTextSub, size: 20)),
                         )
                       ],
                     ),
@@ -145,11 +144,11 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> with Sing
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const SizedBox(height: 16),
-                          const Text("NAMA DOMPET CUSTOM", style: TextStyle(color: Colors.white54, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
+                          Text("NAMA DOMPET CUSTOM", style: TextStyle(color: finance.themeTextSub, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
                           const SizedBox(height: 12),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            decoration: BoxDecoration(color: const Color(0xFF222730), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.white10)),
+                            decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(20), border: Border.all(color: finance.themeBorder)),
                             child: Row(
                               children: [
                                 WalletHelper.getWalletLogo(inputName.isEmpty ? 'NE' : inputName, size: 'sm'),
@@ -158,8 +157,8 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> with Sing
                                   child: TextField(
                                     controller: controller,
                                     onChanged: (val) => setSheetState(() => inputName = val),
-                                    style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900),
-                                    decoration: const InputDecoration(border: InputBorder.none, hintText: "cth: Celengan BCA", hintStyle: TextStyle(color: Colors.white30, fontWeight: FontWeight.normal)),
+                                    style: TextStyle(color: finance.themeText, fontSize: 16, fontWeight: FontWeight.w900),
+                                    decoration: InputDecoration(border: InputBorder.none, hintText: "cth: Celengan BCA", hintStyle: TextStyle(color: finance.themeTextSub.withValues(alpha:0.5), fontWeight: FontWeight.normal)),
                                   ),
                                 ),
                               ],
@@ -167,7 +166,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> with Sing
                           ),
 
                           const SizedBox(height: 32),
-                          const Text("ATAU PILIH TEMPLATE CEPAT", style: TextStyle(color: Colors.white54, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
+                          Text("ATAU PILIH TEMPLATE CEPAT", style: TextStyle(color: finance.themeTextSub, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
                           const SizedBox(height: 16),
 
                           GridView.builder(
@@ -185,13 +184,13 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> with Sing
                                 },
                                 child: AnimatedContainer(
                                   duration: const Duration(milliseconds: 200),
-                                  decoration: BoxDecoration(color: isSelected ? const Color(0xFF10B981).withValues(alpha:0.1) : const Color(0xFF222730), borderRadius: BorderRadius.circular(20), border: Border.all(color: isSelected ? const Color(0xFF10B981) : Colors.white10)),
+                                  decoration: BoxDecoration(color: isSelected ? finance.themeAccent.withValues(alpha:0.1) : finance.themeCard, borderRadius: BorderRadius.circular(20), border: Border.all(color: isSelected ? finance.themeAccent : finance.themeBorder)),
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       WalletHelper.getWalletLogo(template, size: 'sm'),
                                       const SizedBox(height: 10),
-                                      Text(template, style: TextStyle(color: isSelected ? Colors.white : Colors.white54, fontSize: 10, fontWeight: FontWeight.w900), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                      Text(template, style: TextStyle(color: isSelected ? finance.themeAccent : finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.w900), maxLines: 1, overflow: TextOverflow.ellipsis),
                                     ],
                                   ),
                                 ),
@@ -206,7 +205,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> with Sing
 
                   Container(
                     padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-                    decoration: const BoxDecoration(color: Color(0xFF161B22), border: Border(top: BorderSide(color: Colors.white10))),
+                    decoration: BoxDecoration(color: finance.themeBg, border: Border(top: BorderSide(color: finance.themeBorder))),
                     child: GestureDetector(
                       onTap: () {
                         if (inputName.isNotEmpty) {
@@ -221,9 +220,9 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> with Sing
                         duration: const Duration(milliseconds: 200),
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(vertical: 20),
-                        decoration: BoxDecoration(color: inputName.isNotEmpty ? const Color(0xFF10B981) : Colors.white.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(24), boxShadow: inputName.isNotEmpty ? [BoxShadow(color: const Color(0xFF10B981).withValues(alpha:0.4), blurRadius: 20)] : null),
+                        decoration: BoxDecoration(color: inputName.isNotEmpty ? finance.themeAccent : finance.themeCard, borderRadius: BorderRadius.circular(24), border: Border.all(color: inputName.isNotEmpty ? finance.themeAccent : finance.themeBorder)),
                         alignment: Alignment.center,
-                        child: Text("Gunakan Dompet Ini", style: TextStyle(color: inputName.isNotEmpty ? Colors.white : Colors.white54, fontWeight: FontWeight.w900, fontSize: 16)),
+                        child: Text("Gunakan Dompet Ini", style: TextStyle(color: inputName.isNotEmpty ? Colors.white : finance.themeTextSub, fontWeight: FontWeight.w900, fontSize: 16)),
                       ),
                     ),
                   )
@@ -252,7 +251,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> with Sing
 
             return Container(
               height: MediaQuery.of(context).size.height * 0.7,
-              decoration: const BoxDecoration(color: Color(0xFF1E1B38), borderRadius: BorderRadius.vertical(top: Radius.circular(32))),
+              decoration: BoxDecoration(color: finance.themeBg, borderRadius: const BorderRadius.vertical(top: Radius.circular(32)), border: Border(top: BorderSide(color: finance.themeBorder))),
               child: Column(
                 children: [
                   Padding(
@@ -260,10 +259,10 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> with Sing
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text("Atur Kategori", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
+                        Text("Atur Kategori", style: TextStyle(color: finance.themeText, fontSize: 20, fontWeight: FontWeight.w900)),
                         GestureDetector(
                           onTap: () => Navigator.pop(context),
-                          child: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: Colors.white.withValues(alpha:0.05), shape: BoxShape.circle), child: const Icon(Icons.close_rounded, color: Colors.white, size: 20)),
+                          child: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: finance.themeCard, shape: BoxShape.circle, border: Border.all(color: finance.themeBorder)), child: Icon(Icons.close_rounded, color: finance.themeTextSub, size: 20)),
                         )
                       ],
                     ),
@@ -275,11 +274,11 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> with Sing
                         Expanded(
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                            decoration: BoxDecoration(color: const Color(0xFF0A0514), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white10)),
+                            decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(16), border: Border.all(color: finance.themeBorder)),
                             child: TextField(
                               onChanged: (val) => setModalState(() => newCatName = val),
-                              style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
-                              decoration: const InputDecoration(border: InputBorder.none, hintText: "Kategori baru...", hintStyle: TextStyle(color: Colors.white30)),
+                              style: TextStyle(color: finance.themeText, fontSize: 14, fontWeight: FontWeight.bold),
+                              decoration: InputDecoration(border: InputBorder.none, hintText: "Kategori baru...", hintStyle: TextStyle(color: finance.themeTextSub)),
                             ),
                           ),
                         ),
@@ -293,7 +292,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> with Sing
                               setModalState(() => newCatName = '');
                             }
                           },
-                          child: Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: _themeColor, borderRadius: BorderRadius.circular(16)), child: const Icon(Icons.add, color: Colors.white, size: 20)),
+                          child: Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: finance.themeAccent, borderRadius: BorderRadius.circular(16)), child: const Icon(Icons.add, color: Colors.white, size: 20)),
                         )
                       ],
                     ),
@@ -310,11 +309,11 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> with Sing
                         return Container(
                           margin: const EdgeInsets.only(bottom: 12),
                           padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(color: Colors.white.withValues(alpha:0.05), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white10)),
+                          decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(16), border: Border.all(color: finance.themeBorder)),
                           child: isEditing 
                             ? Row(
                                 children: [
-                                  Expanded(child: TextField(autofocus: true, onChanged: (val) => setModalState(() => editCatName = val), controller: TextEditingController(text: editCatName)..selection = TextSelection.collapsed(offset: editCatName.length), style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold), decoration: const InputDecoration(border: InputBorder.none, isDense: true, contentPadding: EdgeInsets.zero))),
+                                  Expanded(child: TextField(autofocus: true, onChanged: (val) => setModalState(() => editCatName = val), controller: TextEditingController(text: editCatName)..selection = TextSelection.collapsed(offset: editCatName.length), style: TextStyle(color: finance.themeText, fontSize: 14, fontWeight: FontWeight.bold), decoration: const InputDecoration(border: InputBorder.none, isDense: true, contentPadding: EdgeInsets.zero))),
                                   IconButton(
                                     icon: const Icon(Icons.check_circle, color: Colors.greenAccent),
                                     onPressed: () {
@@ -333,10 +332,10 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> with Sing
                             : Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(kat.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                                  Text(kat.name, style: TextStyle(color: finance.themeText, fontWeight: FontWeight.bold, fontSize: 14)),
                                   Row(
                                     children: [
-                                      IconButton(icon: const Icon(Icons.edit_outlined, color: Colors.white54, size: 18), onPressed: () => setModalState(() { editingCatId = kat.id; editCatName = kat.name; })),
+                                      IconButton(icon: Icon(Icons.edit_outlined, color: finance.themeTextSub, size: 18), onPressed: () => setModalState(() { editingCatId = kat.id; editCatName = kat.name; })),
                                       IconButton(
                                         icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 18),
                                         onPressed: () { finance.allKategori.removeWhere((k) => k.id == kat.id); finance.switchUser(finance.currentUser!.id); setModalState(() {}); },
@@ -358,14 +357,14 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> with Sing
     );
   }
 
-  Future<void> _selectDate(BuildContext context) async {
+  Future<void> _selectDate(BuildContext context, FinanceProvider finance) async {
     final DateTime? picked = await showDatePicker(context: context, initialDate: _tanggal, firstDate: DateTime(2000), lastDate: DateTime(2101),
-      builder: (context, child) { return Theme(data: Theme.of(context).copyWith(colorScheme: ColorScheme.dark(primary: _themeColor, onPrimary: Colors.white, surface: const Color(0xFF1E1B38), onSurface: Colors.white)), child: child!); },
+      builder: (context, child) { return Theme(data: Theme.of(context).copyWith(colorScheme: ColorScheme.dark(primary: finance.themeAccent, onPrimary: Colors.white, surface: finance.themeCard, onSurface: finance.themeText)), child: child!); },
     );
     if (picked != null && picked != _tanggal) setState(() { _tanggal = picked; });
   }
 
-void _handleSubmit(FinanceProvider finance) async {
+  void _handleSubmit(FinanceProvider finance) async {
     if (_isSubmitting) return;
 
     if (finance.mySumberDana.isEmpty) return _showError('Bikin dompet dulu ya Jar!');
@@ -377,12 +376,9 @@ void _handleSubmit(FinanceProvider finance) async {
     if (_jenis == 'Transfer' && _idDana == _idDanaTujuan) return _showError('Dompet asal dan tujuan nggak boleh sama!');
     if (_jenis != 'Transfer' && _kategori.isEmpty) return _showError('Pilih kategori transaksinya dulu!');
 
-    // 🟢 GEMBOK SALDO MINUS!
-    // Ambil data dompet asal yang dipilih
     final dompetAsal = finance.mySumberDana.firstWhere((d) => d.idDana == _idDana);
     final inputNominal = double.parse(_nominal);
 
-    // Cek buat Pengeluaran atau Transfer
     if (_jenis == 'Pengeluaran' || _jenis == 'Transfer') {
       if (inputNominal > dompetAsal.saldoTerkini) {
         _triggerShake();
@@ -412,12 +408,6 @@ void _handleSubmit(FinanceProvider finance) async {
     if (mounted) Navigator.pop(context);
   }
 
-  Color get _themeColor {
-    if (_jenis == 'Pemasukan') return const Color(0xFF10B981); 
-    if (_jenis == 'Transfer') return const Color(0xFF3B82F6); 
-    return const Color(0xFFFF0055); 
-  }
-
   List<CategoryModel> _getDisplayCategories(FinanceProvider finance) {
     List<CategoryModel> cats = finance.myKategori.toList();
     if (!cats.any((k) => k.jenis == 'Pengeluaran')) {
@@ -433,7 +423,7 @@ void _handleSubmit(FinanceProvider finance) async {
     final link = isTujuan ? _targetWalletLink : _walletLink;
     return CompositedTransformFollower(
       link: link,
-      offset: const Offset(0, 62), // 🟢 Disesuaikan dengan tinggi baru card
+      offset: const Offset(0, 62), 
       showWhenUnlinked: false,
       child: Align(
         alignment: Alignment.topLeft,
@@ -444,10 +434,10 @@ void _handleSubmit(FinanceProvider finance) async {
             constraints: const BoxConstraints(maxHeight: 300),
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFF0A0514).withValues(alpha: 0.98),
+              color: finance.themeBg, // 🟢 Dropdown solid
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white10),
-              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 20, offset: const Offset(0, 10))],
+              border: Border.all(color: finance.themeBorder),
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 20, offset: const Offset(0, 10))],
             ),
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
@@ -456,7 +446,7 @@ void _handleSubmit(FinanceProvider finance) async {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if (finance.mySumberDana.isEmpty)
-                    const Padding(padding: EdgeInsets.all(16), child: Text("Belum ada dompet", textAlign: TextAlign.center, style: TextStyle(color: Colors.white54))),
+                    Padding(padding: const EdgeInsets.all(16), child: Text("Belum ada dompet", textAlign: TextAlign.center, style: TextStyle(color: finance.themeTextSub))),
                     
                   ...finance.mySumberDana.map((dompet) {
                     if (isTujuan && dompet.idDana == _idDana) return const SizedBox.shrink();
@@ -475,9 +465,9 @@ void _handleSubmit(FinanceProvider finance) async {
                         margin: const EdgeInsets.only(bottom: 6),
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                         decoration: BoxDecoration(
-                          color: isSelected ? _themeColor : Colors.transparent, 
+                          color: isSelected ? finance.themeAccent.withValues(alpha:0.1) : finance.themeCard, 
                           borderRadius: BorderRadius.circular(16),
-                          border: isSelected ? Border.all(color: Colors.white.withValues(alpha:0.2)) : null,
+                          border: Border.all(color: isSelected ? finance.themeAccent : finance.themeBorder),
                         ),
                         child: Row(
                           children: [
@@ -487,8 +477,8 @@ void _handleSubmit(FinanceProvider finance) async {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(dompet.namaAset, style: TextStyle(color: isSelected ? Colors.white : Colors.white70, fontWeight: FontWeight.w900, fontSize: 13)),
-                                  Text(Formatters.formatCurrency(dompet.saldoTerkini), style: TextStyle(color: isSelected ? Colors.white.withValues(alpha:0.8) : Colors.white54, fontSize: 10, fontWeight: FontWeight.bold)),
+                                  Text(dompet.namaAset, style: TextStyle(color: isSelected ? finance.themeAccent : finance.themeText, fontWeight: FontWeight.w900, fontSize: 13)),
+                                  Text(Formatters.formatCurrency(dompet.saldoTerkini), style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.bold)),
                                 ],
                               ),
                             ),
@@ -498,7 +488,7 @@ void _handleSubmit(FinanceProvider finance) async {
                     );
                   }),
                   
-                  const Divider(color: Colors.white10, height: 16),
+                  Divider(color: finance.themeBorder, height: 16),
                   
                   GestureDetector(
                     onTap: () {
@@ -507,14 +497,14 @@ void _handleSubmit(FinanceProvider finance) async {
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      decoration: BoxDecoration(color: const Color(0xFF10B981).withValues(alpha:0.1), borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3), style: BorderStyle.solid)), 
+                      decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(16), border: Border.all(color: finance.themeBorder, style: BorderStyle.solid)), 
                       alignment: Alignment.center,
-                      child: const Row(
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.add, color: Color(0xFF10B981), size: 16),
-                          SizedBox(width: 6),
-                          Text("DOMPET BARU", style: TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 1.0)),
+                          Icon(Icons.add, color: finance.themeTextSub, size: 16),
+                          const SizedBox(width: 6),
+                          Text("DOMPET BARU", style: TextStyle(color: finance.themeTextSub, fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 1.0)),
                         ],
                       ),
                     ),
@@ -541,14 +531,9 @@ void _handleSubmit(FinanceProvider finance) async {
     final bool isReadyToSave = _nominal.isNotEmpty && _nominal != '0' && (_jenis == 'Transfer' ? _idDanaTujuan.isNotEmpty : _kategori.isNotEmpty);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF05010D),
+      backgroundColor: finance.themeBg, // 🟢 Murni Latar Solid
       body: Stack(
         children: [
-          Container(decoration: const BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0xFF2A1054), Color(0xFF0A0514)], stops: [0.0, 0.4]))),
-          Positioned(top: -50, right: -50, child: Container(width: 300, height: 300, decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFF7C3AED).withValues(alpha: 0.2)))),
-          Positioned(top: MediaQuery.of(context).size.height * 0.3, left: -100, child: Container(width: 250, height: 250, decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFFC026D3).withValues(alpha: 0.1)))),
-          Positioned.fill(child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 80.0, sigmaY: 80.0), child: Container(color: Colors.transparent))),
-
           SafeArea(
             child: Column(
               children: [
@@ -556,8 +541,8 @@ void _handleSubmit(FinanceProvider finance) async {
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                   child: Row(
                     children: [
-                      GestureDetector(onTap: () => Navigator.pop(context), child: Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: Colors.white.withValues(alpha:0.05), shape: BoxShape.circle), child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18))),
-                      const Expanded(child: Center(child: Text("Tambah Transaksi", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)))),
+                      GestureDetector(onTap: () => Navigator.pop(context), child: Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: finance.themeCard, shape: BoxShape.circle, border: Border.all(color: finance.themeBorder)), child: Icon(Icons.arrow_back_ios_new_rounded, color: finance.themeTextSub, size: 18))),
+                      Expanded(child: Center(child: Text("Tambah Transaksi", style: TextStyle(color: finance.themeText, fontSize: 18, fontWeight: FontWeight.bold)))),
                       const SizedBox(width: 42), 
                     ],
                   ),
@@ -573,14 +558,14 @@ void _handleSubmit(FinanceProvider finance) async {
                         Container(
                           margin: const EdgeInsets.symmetric(horizontal: 24),
                           padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(color: const Color(0xFF1E1B38).withValues(alpha:0.5), borderRadius: BorderRadius.circular(30), border: Border.all(color: Colors.white10)),
+                          decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(30), border: Border.all(color: finance.themeBorder)),
                           child: Row(
                             children: ['Pengeluaran', 'Pemasukan', 'Transfer'].map((tab) {
                               final isActive = _jenis == tab;
                               return Expanded(
                                 child: GestureDetector(
                                   onTap: () { HapticFeedback.lightImpact(); setState(() { _jenis = tab; _kategori = ''; _hasManuallyChangedCategory = false; }); },
-                                  child: Container(padding: const EdgeInsets.symmetric(vertical: 14), decoration: BoxDecoration(color: isActive ? _themeColor : Colors.transparent, borderRadius: BorderRadius.circular(30), boxShadow: isActive ? [BoxShadow(color: _themeColor.withValues(alpha:0.5), blurRadius: 15)] : null), alignment: Alignment.center, child: Text(tab, style: TextStyle(color: isActive ? Colors.white : Colors.white54, fontWeight: FontWeight.bold, fontSize: 13))),
+                                  child: Container(padding: const EdgeInsets.symmetric(vertical: 14), decoration: BoxDecoration(color: isActive ? finance.themeAccent : Colors.transparent, borderRadius: BorderRadius.circular(30)), alignment: Alignment.center, child: Text(tab, style: TextStyle(color: isActive ? Colors.white : finance.themeTextSub, fontWeight: FontWeight.bold, fontSize: 13))),
                                 ),
                               );
                             }).toList(),
@@ -602,8 +587,8 @@ void _handleSubmit(FinanceProvider finance) async {
                             crossAxisAlignment: CrossAxisAlignment.baseline,
                             textBaseline: TextBaseline.alphabetic,
                             children: [
-                              Text("Rp ", style: TextStyle(color: _nominal.isEmpty ? Colors.white30 : Colors.white70, fontSize: 32, fontWeight: FontWeight.bold)),
-                              Text(_nominal.isEmpty ? "0" : Formatters.formatRibuan(_nominal), style: TextStyle(color: _nominal.isEmpty ? Colors.white30 : Colors.white, fontSize: _nominal.length > 8 ? 48 : 64, fontWeight: FontWeight.w900, letterSpacing: -1)),
+                              Text("Rp ", style: TextStyle(color: _nominal.isEmpty ? finance.themeTextSub.withValues(alpha:0.5) : finance.themeTextSub, fontSize: 32, fontWeight: FontWeight.bold)),
+                              Text(_nominal.isEmpty ? "0" : Formatters.formatRibuan(_nominal), style: TextStyle(color: _nominal.isEmpty ? finance.themeTextSub.withValues(alpha:0.5) : finance.themeText, fontSize: _nominal.length > 8 ? 48 : 64, fontWeight: FontWeight.w900, letterSpacing: -1)),
                             ],
                           ),
                         ),
@@ -614,14 +599,14 @@ void _handleSubmit(FinanceProvider finance) async {
                           padding: const EdgeInsets.symmetric(horizontal: 24),
                           child: Column(
                             children: [
-                              // 🟢 FIXED HEIGHT LOCK: Tinggi dikunci mati di 54px & alignment: Center
                               Row(
                                 children: [
                                   Expanded(
                                     child: CompositedTransformTarget(
                                       link: _walletLink,
                                       child: _buildPillTile(
-                                        widget: Row(mainAxisAlignment: MainAxisAlignment.center, children: [if (dompetAsal.namaAset != 'Pilih Dompet') ...[WalletHelper.getWalletLogo(dompetAsal.namaAset, size: 'sm'), const SizedBox(width: 8)], Flexible(child: Text(dompetAsal.namaAset, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14), overflow: TextOverflow.ellipsis))]), 
+                                        finance: finance,
+                                        widget: Row(mainAxisAlignment: MainAxisAlignment.center, children: [if (dompetAsal.namaAset != 'Pilih Dompet') ...[WalletHelper.getWalletLogo(dompetAsal.namaAset, size: 'sm'), const SizedBox(width: 8)], Flexible(child: Text(dompetAsal.namaAset, style: TextStyle(color: finance.themeText, fontWeight: FontWeight.bold, fontSize: 14), overflow: TextOverflow.ellipsis))]), 
                                         onTap: () => setState(() { _isWalletDropdownOpen = !_isWalletDropdownOpen; _isTargetWalletDropdownOpen = false; })
                                       ),
                                     ),
@@ -629,8 +614,9 @@ void _handleSubmit(FinanceProvider finance) async {
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: _buildPillTile(
-                                      widget: Row(mainAxisAlignment: MainAxisAlignment.center, children: [const Icon(Icons.calendar_today_rounded, color: Colors.white70, size: 16), const SizedBox(width: 8), Text(isToday ? "Hari Ini" : DateFormat('dd MMM').format(_tanggal), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14))]), 
-                                      onTap: () => _selectDate(context)
+                                      finance: finance,
+                                      widget: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.calendar_today_rounded, color: finance.themeTextSub, size: 16), const SizedBox(width: 8), Text(isToday ? "Hari Ini" : DateFormat('dd MMM').format(_tanggal), style: TextStyle(color: finance.themeText, fontWeight: FontWeight.bold, fontSize: 14))]), 
+                                      onTap: () => _selectDate(context, finance)
                                     )
                                   ),
                                 ],
@@ -641,9 +627,10 @@ void _handleSubmit(FinanceProvider finance) async {
                                 CompositedTransformTarget(
                                   link: _targetWalletLink,
                                   child: _buildPillTile(
-                                    widget: Row(mainAxisAlignment: MainAxisAlignment.center, children: [const Icon(Icons.sync_alt_rounded, color: Colors.white70, size: 16), const SizedBox(width: 8), Text(dompetTujuan?.namaAset ?? "Pilih Tujuan...", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14))]), 
+                                    finance: finance,
+                                    widget: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.sync_alt_rounded, color: finance.themeTextSub, size: 16), const SizedBox(width: 8), Text(dompetTujuan?.namaAset ?? "Pilih Tujuan...", style: TextStyle(color: finance.themeText, fontWeight: FontWeight.bold, fontSize: 14))]), 
                                     onTap: () => setState(() { _isTargetWalletDropdownOpen = !_isTargetWalletDropdownOpen; _isWalletDropdownOpen = false; }), 
-                                    borderColor: const Color(0xFF3B82F6).withValues(alpha:0.5)
+                                    borderColor: finance.themeAccent.withValues(alpha:0.5)
                                   ),
                                 ),
                               ],
@@ -652,7 +639,7 @@ void _handleSubmit(FinanceProvider finance) async {
                               
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                                decoration: BoxDecoration(color: const Color(0xFF1E1B38), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.white10)),
+                                decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(20), border: Border.all(color: finance.themeBorder)),
                                 child: TextField(
                                   onChanged: (val) {
                                     _keterangan = val;
@@ -663,8 +650,8 @@ void _handleSubmit(FinanceProvider finance) async {
                                     setState(() {});
                                   },
                                   controller: TextEditingController(text: _keterangan)..selection = TextSelection.collapsed(offset: _keterangan.length),
-                                  style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
-                                  decoration: const InputDecoration(icon: Icon(Icons.notes_rounded, color: Colors.white54, size: 20), border: InputBorder.none, hintText: "Tambah catatan...", hintStyle: TextStyle(color: Colors.white30)),
+                                  style: TextStyle(color: finance.themeText, fontSize: 14, fontWeight: FontWeight.w500),
+                                  decoration: InputDecoration(icon: Icon(Icons.notes_rounded, color: finance.themeTextSub, size: 20), border: InputBorder.none, hintText: "Tambah catatan...", hintStyle: TextStyle(color: finance.themeTextSub.withValues(alpha: 0.5))),
                                 ),
                               ),
                             ],
@@ -680,12 +667,12 @@ void _handleSubmit(FinanceProvider finance) async {
                               scrollDirection: Axis.horizontal,
                               itemCount: listKategori.length + 1, 
                               itemBuilder: (context, index) {
-                                if (index == listKategori.length) return GestureDetector(onTap: () => _showManageCategorySheet(context, finance), child: Container(margin: const EdgeInsets.only(left: 4), padding: const EdgeInsets.symmetric(horizontal: 16), decoration: BoxDecoration(color: Colors.white.withValues(alpha:0.05), borderRadius: BorderRadius.circular(24), border: Border.all(color: Colors.white.withValues(alpha:0.2), style: BorderStyle.solid)), child: const Row(children: [Icon(Icons.settings_outlined, size: 16, color: Colors.white54), SizedBox(width: 6), Text("Atur", style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold))])));
+                                if (index == listKategori.length) return GestureDetector(onTap: () => _showManageCategorySheet(context, finance), child: Container(margin: const EdgeInsets.only(left: 4), padding: const EdgeInsets.symmetric(horizontal: 16), decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(24), border: Border.all(color: finance.themeBorder, style: BorderStyle.solid)), child: Row(children: [Icon(Icons.settings_outlined, size: 16, color: finance.themeTextSub), const SizedBox(width: 6), Text("Atur", style: TextStyle(color: finance.themeTextSub, fontSize: 12, fontWeight: FontWeight.bold))])));
                                 final kat = listKategori[index];
                                 final isSelected = _kategori == kat.name;
                                 return GestureDetector(
                                   onTap: () { HapticFeedback.lightImpact(); setState(() { _kategori = kat.name; _hasManuallyChangedCategory = true; }); },
-                                  child: AnimatedContainer(duration: const Duration(milliseconds: 200), margin: const EdgeInsets.only(right: 10), padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12), decoration: BoxDecoration(color: isSelected ? _themeColor.withValues(alpha:0.2) : const Color(0xFF1E1B38), borderRadius: BorderRadius.circular(24), border: Border.all(color: isSelected ? _themeColor : Colors.white10)), child: Row(children: [Icon(Icons.local_offer_outlined, size: 16, color: isSelected ? _themeColor : Colors.white54), const SizedBox(width: 8), Text(kat.name, style: TextStyle(color: isSelected ? Colors.white : Colors.white70, fontSize: 13, fontWeight: FontWeight.bold))])),
+                                  child: AnimatedContainer(duration: const Duration(milliseconds: 200), margin: const EdgeInsets.only(right: 10), padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12), decoration: BoxDecoration(color: isSelected ? finance.themeAccent.withValues(alpha:0.15) : finance.themeCard, borderRadius: BorderRadius.circular(24), border: Border.all(color: isSelected ? finance.themeAccent : finance.themeBorder)), child: Row(children: [Icon(Icons.local_offer_outlined, size: 16, color: isSelected ? finance.themeAccent : finance.themeTextSub), const SizedBox(width: 8), Text(kat.name, style: TextStyle(color: isSelected ? finance.themeText : finance.themeTextSub, fontSize: 13, fontWeight: FontWeight.bold))])),
                                 );
                               },
                             ),
@@ -698,7 +685,7 @@ void _handleSubmit(FinanceProvider finance) async {
                           padding: const EdgeInsets.symmetric(horizontal: 24),
                           child: GestureDetector(
                             onTap: () => _handleSubmit(finance),
-                            child: AnimatedContainer(duration: const Duration(milliseconds: 200), width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 20), decoration: BoxDecoration(color: isReadyToSave ? _themeColor : const Color(0xFF1E1B38), borderRadius: BorderRadius.circular(24), boxShadow: isReadyToSave ? [BoxShadow(color: _themeColor.withValues(alpha:0.4), blurRadius: 20)] : null), alignment: Alignment.center, child: _isSubmitting ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : Text(widget.initialData != null ? "Update Transaksi" : "Simpan $_jenis", style: TextStyle(color: isReadyToSave ? Colors.white : Colors.white54, fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: 0.5))),
+                            child: AnimatedContainer(duration: const Duration(milliseconds: 200), width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 20), decoration: BoxDecoration(color: isReadyToSave ? finance.themeAccent : finance.themeCard, borderRadius: BorderRadius.circular(24), border: Border.all(color: isReadyToSave ? finance.themeAccent : finance.themeBorder)), alignment: Alignment.center, child: _isSubmitting ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : Text(widget.initialData != null ? "Update Transaksi" : "Simpan $_jenis", style: TextStyle(color: isReadyToSave ? Colors.white : finance.themeTextSub, fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: 0.5))),
                           ),
                         ),
                         
@@ -709,7 +696,7 @@ void _handleSubmit(FinanceProvider finance) async {
                           child: GridView.count(
                             shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), crossAxisCount: 3, childAspectRatio: 1.8, mainAxisSpacing: 12, crossAxisSpacing: 12,
                             children: [
-                              _buildNumpadBtn('1'), _buildNumpadBtn('2'), _buildNumpadBtn('3'), _buildNumpadBtn('4'), _buildNumpadBtn('5'), _buildNumpadBtn('6'), _buildNumpadBtn('7'), _buildNumpadBtn('8'), _buildNumpadBtn('9'), _buildNumpadBtn('000'), _buildNumpadBtn('0'), _buildNumpadBtn('backspace', icon: Icons.backspace_outlined),
+                              _buildNumpadBtn('1', finance), _buildNumpadBtn('2', finance), _buildNumpadBtn('3', finance), _buildNumpadBtn('4', finance), _buildNumpadBtn('5', finance), _buildNumpadBtn('6', finance), _buildNumpadBtn('7', finance), _buildNumpadBtn('8', finance), _buildNumpadBtn('9', finance), _buildNumpadBtn('000', finance), _buildNumpadBtn('0', finance), _buildNumpadBtn('backspace', finance, icon: Icons.backspace_outlined),
                             ],
                           ),
                         ),
@@ -729,26 +716,25 @@ void _handleSubmit(FinanceProvider finance) async {
           if (_isTargetWalletDropdownOpen) _buildDropdownOverlay(true, finance),
 
           if (_errorMsg != null)
-            Positioned(top: 40, left: 20, right: 20, child: Material(color: Colors.transparent, child: Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.redAccent, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.redAccent.withValues(alpha:0.4), blurRadius: 20)]), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Container(padding: const EdgeInsets.all(4), decoration: BoxDecoration(color: Colors.white.withValues(alpha:0.2), shape: BoxShape.circle), child: const Icon(Icons.error_outline, color: Colors.white, size: 16)), const SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text("Oops, ada yang kurang!", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)), const SizedBox(height: 2), Text(_errorMsg!, style: const TextStyle(color: Colors.white70, fontSize: 12))])), GestureDetector(onTap: () => setState(() => _errorMsg = null), child: const Icon(Icons.close, color: Colors.white, size: 20))])))),
+            Positioned(top: 40, left: 20, right: 20, child: Material(color: Colors.transparent, child: Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.redAccent, borderRadius: BorderRadius.circular(20)), child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Container(padding: const EdgeInsets.all(4), decoration: BoxDecoration(color: Colors.white.withValues(alpha:0.2), shape: BoxShape.circle), child: const Icon(Icons.error_outline, color: Colors.white, size: 16)), const SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text("Oops, ada yang kurang!", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)), const SizedBox(height: 2), Text(_errorMsg!, style: const TextStyle(color: Colors.white70, fontSize: 12))])), GestureDetector(onTap: () => setState(() => _errorMsg = null), child: const Icon(Icons.close, color: Colors.white, size: 20))])))),
 
           if (_isSuccess)
-            Positioned.fill(child: Container(color: const Color(0xFF05010D).withValues(alpha: 0.8), child: BackdropFilter(filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [TweenAnimationBuilder<double>(tween: Tween(begin: 0.0, end: 1.0), duration: const Duration(milliseconds: 500), curve: Curves.elasticOut, builder: (context, value, child) { return Transform.scale(scale: value, child: Container(width: 100, height: 100, decoration: BoxDecoration(color: Colors.greenAccent, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.greenAccent.withValues(alpha:0.5), blurRadius: 40)]), child: const Icon(Icons.check_rounded, color: Colors.white, size: 60))); }), const SizedBox(height: 24), const Text("Mantap!", style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w900)), const SizedBox(height: 8), const Text("Transaksi berhasil dicatat.", style: TextStyle(color: Colors.white54, fontSize: 14, fontWeight: FontWeight.bold))])))),
+            Positioned.fill(child: Container(color: finance.themeBg.withValues(alpha: 0.9), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [TweenAnimationBuilder<double>(tween: Tween(begin: 0.0, end: 1.0), duration: const Duration(milliseconds: 500), curve: Curves.elasticOut, builder: (context, value, child) { return Transform.scale(scale: value, child: Container(width: 100, height: 100, decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle), child: const Icon(Icons.check_rounded, color: Colors.white, size: 60))); }), const SizedBox(height: 24), Text("Mantap!", style: TextStyle(color: finance.themeText, fontSize: 32, fontWeight: FontWeight.w900)), const SizedBox(height: 8), Text("Transaksi berhasil dicatat.", style: TextStyle(color: finance.themeTextSub, fontSize: 14, fontWeight: FontWeight.bold))]))),
         ],
       ),
     );
   }
 
-  // 🟢 SEKARANG TINGGINYA DIKUNCI MATI (height: 54) & POSISI KONTEN OTOMATIS CENTER VERTIKAL
-  Widget _buildPillTile({required Widget widget, required VoidCallback onTap, Color? borderColor}) {
+  Widget _buildPillTile({required FinanceProvider finance, required Widget widget, required VoidCallback onTap, Color? borderColor}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         height: 54, 
         padding: const EdgeInsets.symmetric(horizontal: 12), 
         decoration: BoxDecoration(
-          color: const Color(0xFF1E1B38), 
+          color: finance.themeCard, 
           borderRadius: BorderRadius.circular(20), 
-          border: Border.all(color: borderColor ?? Colors.white10),
+          border: Border.all(color: borderColor ?? finance.themeBorder),
         ), 
         alignment: Alignment.center, 
         child: widget,
@@ -756,10 +742,14 @@ void _handleSubmit(FinanceProvider finance) async {
     );
   }
 
-  Widget _buildNumpadBtn(String val, {IconData? icon}) {
+  Widget _buildNumpadBtn(String val, FinanceProvider finance, {IconData? icon}) {
     return GestureDetector(
       onTap: () => _handleNumpad(val),
-      child: Container(decoration: BoxDecoration(color: const Color(0xFF1E1B38), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white.withValues(alpha:0.02))), alignment: Alignment.center, child: icon != null ? Icon(icon, color: Colors.white, size: 24) : Text(val, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w500))),
+      child: Container(
+        decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(16), border: Border.all(color: finance.themeBorder)), 
+        alignment: Alignment.center, 
+        child: icon != null ? Icon(icon, color: finance.themeText, size: 24) : Text(val, style: TextStyle(color: finance.themeText, fontSize: 24, fontWeight: FontWeight.w500))
+      ),
     );
   }
 }

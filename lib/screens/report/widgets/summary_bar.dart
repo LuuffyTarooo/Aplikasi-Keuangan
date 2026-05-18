@@ -1,7 +1,9 @@
 // lib/screens/report/widgets/summary_bar.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
+import 'package:aplikasi_keuangan/providers/finance_provider.dart';
 import 'package:aplikasi_keuangan/models/transaction_model.dart';
 import 'package:aplikasi_keuangan/core/utils/formatters.dart';
 
@@ -31,14 +33,12 @@ class _SummaryBarState extends State<SummaryBar> {
   @override
   void didUpdateWidget(SummaryBar oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Sinkronisasi kalau parent ngerubah tanggal
     if (oldWidget.currentDate != widget.currentDate) {
       _selectedDate = widget.currentDate;
     }
   }
 
   String _formatAjaib(double n) {
-    // Logika format ringkas kalau nyentuh jutaan
     if (n.abs() >= 1000000) {
       return "Rp ${Formatters.formatUangCompact(n).replaceAll(RegExp(r'^Rp\s?'), '')}";
     } else {
@@ -48,7 +48,9 @@ class _SummaryBarState extends State<SummaryBar> {
 
   @override
   Widget build(BuildContext context) {
-    // Hitung Masuk & Keluar di bulan ini
+    // 🟢 AUTO-SYNC
+    final finance = Provider.of<FinanceProvider>(context);
+
     double masuk = 0;
     double keluar = 0;
 
@@ -69,23 +71,23 @@ class _SummaryBarState extends State<SummaryBar> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
+            Text(
               "Ringkasan",
               style: TextStyle(
-                color: Colors.white,
+                color: finance.themeText, // 🟢 AUTO-SYNC Text
                 fontSize: 16,
                 fontWeight: FontWeight.w900,
                 letterSpacing: -0.5,
               ),
             ),
             
-            // Navigasi Bulan (Glassmorphism)
+            // Navigasi Bulan (SOLID CARD)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha:0.05),
+                color: finance.themeCard, // 🟢 AUTO-SYNC Card
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.white10),
+                border: Border.all(color: finance.themeBorder),
               ),
               child: Row(
                 children: [
@@ -94,9 +96,9 @@ class _SummaryBarState extends State<SummaryBar> {
                       HapticFeedback.lightImpact();
                       setState(() => _selectedDate = DateTime(_selectedDate.year, _selectedDate.month - 1, 1));
                     },
-                    child: const Padding(
-                      padding: EdgeInsets.all(4),
-                      child: Icon(Icons.chevron_left_rounded, color: Colors.white54, size: 16),
+                    child: Padding(
+                      padding: const EdgeInsets.all(4),
+                      child: Icon(Icons.chevron_left_rounded, color: finance.themeTextSub, size: 16),
                     ),
                   ),
                   Container(
@@ -104,8 +106,8 @@ class _SummaryBarState extends State<SummaryBar> {
                     alignment: Alignment.center,
                     child: Text(
                       labelWaktu.toUpperCase(),
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: finance.themeText, // 🟢 AUTO-SYNC Text
                         fontSize: 10,
                         fontWeight: FontWeight.w900,
                         letterSpacing: 1.0,
@@ -117,9 +119,9 @@ class _SummaryBarState extends State<SummaryBar> {
                       HapticFeedback.lightImpact();
                       setState(() => _selectedDate = DateTime(_selectedDate.year, _selectedDate.month + 1, 1));
                     },
-                    child: const Padding(
-                      padding: EdgeInsets.all(4),
-                      child: Icon(Icons.chevron_right_rounded, color: Colors.white54, size: 16),
+                    child: Padding(
+                      padding: const EdgeInsets.all(4),
+                      child: Icon(Icons.chevron_right_rounded, color: finance.themeTextSub, size: 16),
                     ),
                   ),
                 ],
@@ -136,10 +138,11 @@ class _SummaryBarState extends State<SummaryBar> {
             // 1. KARTU PEMASUKAN
             Expanded(
               child: _buildSummaryCard(
+                finance: finance,
                 label: "Masuk",
                 nominal: _formatAjaib(masuk),
                 icon: Icons.arrow_circle_down_rounded,
-                color: Colors.greenAccent,
+                accentColor: Colors.greenAccent,
               ),
             ),
             const SizedBox(width: 12),
@@ -147,10 +150,11 @@ class _SummaryBarState extends State<SummaryBar> {
             // 2. KARTU PENGELUARAN
             Expanded(
               child: _buildSummaryCard(
+                finance: finance,
                 label: "Keluar",
                 nominal: _formatAjaib(keluar),
                 icon: Icons.arrow_circle_up_rounded,
-                color: Colors.pinkAccent,
+                accentColor: Colors.pinkAccent,
               ),
             ),
           ],
@@ -159,37 +163,31 @@ class _SummaryBarState extends State<SummaryBar> {
     );
   }
 
-  // Helper bikin kotak biar kodenya gak panjang
   Widget _buildSummaryCard({
+    required FinanceProvider finance,
     required String label,
     required String nominal,
     required IconData icon,
-    required Color color,
+    required Color accentColor,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       decoration: BoxDecoration(
-        color: color.withValues(alpha:0.08),
+        color: finance.themeCard, // 🟢 AUTO-SYNC Card Solid
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: color.withValues(alpha:0.2)),
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.05),
-            blurRadius: 10,
-          )
-        ]
+        border: Border.all(color: finance.themeBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, color: color, size: 16),
+              Icon(icon, color: accentColor, size: 16),
               const SizedBox(width: 6),
               Text(
                 label.toUpperCase(),
                 style: TextStyle(
-                  color: color,
+                  color: accentColor, // Warna judul tetap (Ijo/Pink) biar jelas
                   fontSize: 10,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 1.5,
@@ -205,8 +203,8 @@ class _SummaryBarState extends State<SummaryBar> {
             child: Text(
               nominal,
               style: TextStyle(
-                color: color,
-                fontSize: 20, // 🟢 Diperbesar karena space makin lega
+                color: finance.themeText, // 🟢 AUTO-SYNC Text (Hitam di Light Mode, Putih di Dark Mode)
+                fontSize: 20, 
                 fontWeight: FontWeight.w900,
                 letterSpacing: -0.5,
               ),

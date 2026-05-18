@@ -17,12 +17,14 @@ import 'package:aplikasi_keuangan/screens/dashboard/budget/budget_tracker_screen
 import 'package:aplikasi_keuangan/screens/transaction/transaction_form_screen.dart';
 
 // 🚀 IMPORT FITUR KHUSUS
+// 🟢 FIX: Jalur Import Disesuaikan sama struktur baru kita
 import 'package:aplikasi_keuangan/screens/dashboard/calculator/calculator_hub_screen.dart'; 
 import 'package:aplikasi_keuangan/screens/dashboard/debt/debt_tracker_screen.dart'; 
 import 'package:aplikasi_keuangan/screens/dashboard/reminder/reminder_hub_screen.dart'; 
 import 'package:aplikasi_keuangan/screens/dashboard/savings/savings_tracker_screen.dart'; 
+import 'package:aplikasi_keuangan/screens/dashboard/voice_assistant_screen.dart';
 
-// 🟢 IMPORT SHEET DOMPET
+// 🟢 FIX: Jalur Import Sheet Dompet yang bener
 import 'package:aplikasi_keuangan/screens/dashboard/wallets/manage_wallets_screen.dart';
 
 void main() async {
@@ -45,23 +47,31 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Duit Tracker',
-      debugShowCheckedModeBanner: false,
-      themeMode: ThemeMode.dark,
-      theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: const Color(0xFF05010D),
-      ),
-      darkTheme: AppTheme.darkTheme,
-      home: Scaffold(
-        backgroundColor: const Color(0xFF020005), 
-        body: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 450),
-            child: const MainAppShell(),
+    // 🟢 AUTO-SYNC: Bungkus MaterialApp pakai Consumer biar tema adaptif sampai ke akar
+    return Consumer<FinanceProvider>(
+      builder: (context, finance, child) {
+        return MaterialApp(
+          title: 'Duit Tracker',
+          debugShowCheckedModeBanner: false,
+          themeMode: finance.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+          theme: ThemeData.light().copyWith(
+            scaffoldBackgroundColor: finance.themeBg, // Latar Terang
           ),
-        ),
-      ), 
+          darkTheme: AppTheme.darkTheme.copyWith(
+            scaffoldBackgroundColor: finance.themeBg, // Latar Gelap
+          ),
+          home: Scaffold(
+            // 🟢 Outer Web Background: Hitam kalau mode gelap, Abu-abu kalau mode terang
+            backgroundColor: finance.isDarkMode ? Colors.black : Colors.grey[200], 
+            body: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 450),
+                child: const MainAppShell(),
+              ),
+            ),
+          ), 
+        );
+      }
     );
   }
 }
@@ -106,9 +116,8 @@ class _MainAppShellState extends State<MainAppShell> {
           screenToPush = const ReminderScreen(); 
           break;
         case 'wallets':
-          // 🟢 KITA PANGGIL LANGSUNG BOTTOM SHEETNYA DI SINI
           ManageWalletsSheet.show(context);
-          return; // 🟢 Stop eksekusi biar dia gak jalanin Navigator.push di bawah
+          return; 
         default:
           return; 
       }
@@ -142,7 +151,7 @@ class _MainAppShellState extends State<MainAppShell> {
         _currentScreenIndex = 0; 
     }
 
-    return MainLayout(
+return MainLayout(
       currentIndex: _currentScreenIndex,
       onNavigate: _handleNavigation,
       onQuickAdd: () {
@@ -153,6 +162,10 @@ class _MainAppShellState extends State<MainAppShell> {
             builder: (context) => const TransactionFormScreen(), 
           ),
         );
+      },
+      // 👇 TAMBAHIN BARIS INI 👇
+      onVoiceAdd: () {
+         VoiceAssistantSheet.show(context);
       },
       child: currentScreen,
     );

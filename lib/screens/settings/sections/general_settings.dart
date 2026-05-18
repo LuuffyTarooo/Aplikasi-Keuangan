@@ -5,7 +5,8 @@ import 'package:provider/provider.dart';
 
 import 'package:aplikasi_keuangan/providers/finance_provider.dart';
 import 'package:aplikasi_keuangan/screens/settings/widgets/setting_ui.dart';
-import 'package:aplikasi_keuangan/core/theme/theme_customizer_sheet.dart'; // 🟢 IMPORT SHEET KUSTOMISASI
+// 🟢 FIX: Jalur import disesuaikan sama letak file yang bener
+import 'package:aplikasi_keuangan/core/theme/theme_customizer_sheet.dart'; 
 
 class GeneralSettings extends StatefulWidget {
   final bool isDarkMode;
@@ -30,7 +31,7 @@ class _GeneralSettingsState extends State<GeneralSettings> {
 
   @override
   Widget build(BuildContext context) {
-    // 🟢 Ambil data tema dari provider
+    // 🟢 AUTO-SYNC: Ambil data tema dari provider
     final finance = Provider.of<FinanceProvider>(context);
 
     return SettingsGroup(
@@ -46,21 +47,22 @@ class _GeneralSettingsState extends State<GeneralSettings> {
               HapticFeedback.lightImpact();
               setState(() => _notifications = val);
             },
-            // 🟢 Warna switch sekarang dinamis ngikutin aksen!
-            activeThumbColor: finance.themeAccent, 
-            activeTrackColor: finance.themeAccent.withValues(alpha: 0.5),
-            inactiveTrackColor: Colors.white10,
+            // 🟢 FIX: Pake WidgetStatePropertyAll biar ga muncul Warning di VS Code
+            thumbColor: WidgetStatePropertyAll(finance.themeAccent), 
+            activeTrackColor: finance.themeAccent.withValues(alpha: 0.3),
+            inactiveThumbColor: finance.themeTextSub,
+            inactiveTrackColor: finance.themeBorder,
           ),
         ),
 
-        // 🟢 INI DIA TOMBOL BARUNYA JAR: KUSTOMISASI TAMPILAN
+        // Kustomisasi Tampilan
         SettingsItem(
           icon: Icons.palette_rounded,
           title: "Kustomisasi Tampilan",
-          trailing: const Icon(Icons.color_lens_rounded, color: Colors.white54, size: 18),
+          trailing: Icon(Icons.color_lens_rounded, color: finance.themeTextSub, size: 18), // 🟢 AUTO-SYNC
           onTap: () {
             HapticFeedback.mediumImpact();
-            // Manggil bottom sheet buat milih warna
+            // Manggil bottom sheet buat milih warna aksen & dark/light mode
             ThemeCustomizerSheet.show(context);
           },
         ),
@@ -69,10 +71,17 @@ class _GeneralSettingsState extends State<GeneralSettings> {
         SettingsItem(
           icon: Icons.language_rounded,
           title: "Bahasa",
-          trailing: const Text("Indonesia", style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
+          trailing: Text("Indonesia", style: TextStyle(color: finance.themeTextSub, fontSize: 12, fontWeight: FontWeight.bold)), // 🟢 AUTO-SYNC
           onTap: () {
             HapticFeedback.lightImpact();
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Fitur ganti bahasa segera hadir!")));
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text("Fitur ganti bahasa segera hadir!", style: TextStyle(color: finance.themeText, fontWeight: FontWeight.bold)),
+                backgroundColor: finance.themeCard,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: finance.themeBorder)),
+              ),
+            );
           },
         ),
 
@@ -89,8 +98,7 @@ class _GeneralSettingsState extends State<GeneralSettings> {
             ),
             child: Text(
               widget.mataUang,
-              // 🟢 Warna teks mata uang juga ngikutin aksen!
-              style: TextStyle(color: finance.themeAccent, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5),
+              style: TextStyle(color: finance.themeAccent, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5), // 🟢 AUTO-SYNC
             ),
           ),
           onTap: widget.onOpenCurrencyModal,

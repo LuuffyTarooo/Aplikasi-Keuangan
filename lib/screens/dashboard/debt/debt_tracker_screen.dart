@@ -8,7 +8,6 @@ import 'package:aplikasi_keuangan/providers/finance_provider.dart';
 import 'package:aplikasi_keuangan/models/transaction_model.dart';
 import 'package:aplikasi_keuangan/models/debt_model.dart';
 import 'package:aplikasi_keuangan/core/utils/formatters.dart';
-import 'package:aplikasi_keuangan/shared/widgets/glass_card.dart';
 import 'package:aplikasi_keuangan/shared/widgets/custom_button.dart';
 import 'package:aplikasi_keuangan/shared/widgets/custom_numpad.dart';
 

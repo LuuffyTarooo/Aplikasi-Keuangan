@@ -7,7 +7,6 @@ import 'package:aplikasi_keuangan/providers/finance_provider.dart';
 import 'package:aplikasi_keuangan/models/transaction_model.dart';
 import 'package:aplikasi_keuangan/models/reminder_model.dart';
 import 'package:aplikasi_keuangan/core/utils/formatters.dart';
-import 'package:aplikasi_keuangan/shared/widgets/glass_card.dart';
 import 'package:aplikasi_keuangan/shared/widgets/custom_button.dart';
 import 'package:aplikasi_keuangan/shared/widgets/custom_numpad.dart';
 
@@ -36,17 +35,16 @@ class _ReminderScreenState extends State<ReminderScreen> {
           children: [
             Icon(isError ? Icons.gpp_bad_rounded : isWarning ? Icons.warning_amber_rounded : Icons.check_circle_rounded, color: Colors.white),
             const SizedBox(width: 8),
-            Expanded(child: Text(message, style: const TextStyle(fontWeight: FontWeight.bold))),
+            Expanded(child: Text(message, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white))),
           ],
         ),
-        backgroundColor: isError ? Colors.pinkAccent : isWarning ? Colors.amber : Colors.green,
+        backgroundColor: isError ? Colors.pinkAccent : isWarning ? Colors.orangeAccent : Colors.green,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
     );
   }
 
-  // 🟢 VAKSIN ANTI MERAH: FUNGSI TANGGAL MANUAL
   String _getBulanIndo(DateTime date) {
     const bulan = ['JAN', 'FEB', 'MAR', 'APR', 'MEI', 'JUN', 'JUL', 'AGU', 'SEP', 'OKT', 'NOV', 'DES'];
     return bulan[date.month - 1];
@@ -57,21 +55,21 @@ class _ReminderScreenState extends State<ReminderScreen> {
     return "${date.day.toString().padLeft(2, '0')} ${bulanLengkap[date.month - 1]} ${date.year}";
   }
 
-  Map<String, dynamic> _getTypeProps(String kategoriName) {
+  Map<String, dynamic> _getTypeProps(String kategoriName, FinanceProvider finance) {
     String lower = kategoriName.toLowerCase();
     if (lower.contains('listrik') || lower.contains('air') || lower.contains('internet') || lower.contains('wifi')) {
-      return {'icon': Icons.bolt_rounded, 'color': Colors.amber};
+      return {'icon': Icons.bolt_rounded, 'color': Colors.orangeAccent};
     }
     if (lower.contains('langgan') || lower.contains('spotify') || lower.contains('netflix') || lower.contains('game')) {
-      return {'icon': Icons.repeat_rounded, 'color': Colors.purpleAccent};
+      return {'icon': Icons.repeat_rounded, 'color': const Color(0xFFD946EF)};
     }
     if (lower.contains('cicil') || lower.contains('kredit') || lower.contains('paylater')) {
-      return {'icon': Icons.credit_card_rounded, 'color': Colors.blueAccent};
+      return {'icon': Icons.credit_card_rounded, 'color': const Color(0xFF3B82F6)};
     }
     if (lower.contains('rumah') || lower.contains('kos') || lower.contains('pendidikan')) {
-      return {'icon': Icons.grid_view_rounded, 'color': Colors.tealAccent};
+      return {'icon': Icons.grid_view_rounded, 'color': Colors.teal};
     }
-    return {'icon': Icons.notifications_active_rounded, 'color': const Color(0xFFD946EF)};
+    return {'icon': Icons.notifications_active_rounded, 'color': finance.themeAccent};
   }
 
   // ==========================================
@@ -84,12 +82,12 @@ class _ReminderScreenState extends State<ReminderScreen> {
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
         padding: const EdgeInsets.all(24),
-        decoration: const BoxDecoration(color: Color(0xFF161B22), borderRadius: BorderRadius.vertical(top: Radius.circular(32)), border: Border(top: BorderSide(color: Colors.white10))),
+        decoration: BoxDecoration(color: finance.themeBg, borderRadius: const BorderRadius.vertical(top: Radius.circular(32)), border: Border(top: BorderSide(color: finance.themeBorder))),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Pilih Dompet", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900)),
+            Text("Pilih Dompet", style: TextStyle(color: finance.themeText, fontSize: 18, fontWeight: FontWeight.w900)),
             const SizedBox(height: 16),
             ...finance.mySumberDana.map((w) => Padding(
               padding: const EdgeInsets.only(bottom: 12),
@@ -97,21 +95,21 @@ class _ReminderScreenState extends State<ReminderScreen> {
                 onTap: () { onSelect(w.idDana); Navigator.pop(ctx); },
                 child: Container(
                   padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(color: Colors.white.withValues(alpha:0.05), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white10)),
+                  decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(16), border: Border.all(color: finance.themeBorder)),
                   child: Row(
                     children: [
-                      Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: const Color(0xFF9333EA).withValues(alpha:0.2), shape: BoxShape.circle), child: const Icon(Icons.account_balance_wallet_rounded, color: Color(0xFFA855F7), size: 20)),
+                      Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: finance.themeAccent.withValues(alpha:0.15), shape: BoxShape.circle), child: Icon(Icons.account_balance_wallet_rounded, color: finance.themeAccent, size: 20)),
                       const SizedBox(width: 16),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(w.namaAset, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
-                            Text("Sisa: ${Formatters.formatCurrency(w.saldoTerkini)}", style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                            Text(w.namaAset, style: TextStyle(color: finance.themeText, fontSize: 14, fontWeight: FontWeight.bold)),
+                            Text("Sisa: ${Formatters.formatCurrency(w.saldoTerkini)}", style: TextStyle(color: finance.themeTextSub, fontSize: 12)),
                           ],
                         ),
                       ),
-                      const Icon(Icons.check_circle_outline_rounded, color: Colors.white30),
+                      Icon(Icons.check_circle_outline_rounded, color: finance.themeTextSub.withValues(alpha:0.5)),
                     ],
                   ),
                 ),
@@ -129,21 +127,21 @@ class _ReminderScreenState extends State<ReminderScreen> {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(color: Colors.white.withValues(alpha:0.05), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white10)),
+        decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(16), border: Border.all(color: finance.themeBorder)),
         child: Row(
           children: [
-            Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: const Color(0xFF3B82F6).withValues(alpha:0.2), shape: BoxShape.circle), child: const Icon(Icons.account_balance_wallet_rounded, color: Color(0xFF3B82F6), size: 16)),
+            Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: finance.themeAccent.withValues(alpha:0.15), shape: BoxShape.circle), child: Icon(Icons.account_balance_wallet_rounded, color: finance.themeAccent, size: 16)),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(dompet == null ? "Pilih Dompet..." : dompet.namaAset, style: TextStyle(color: dompet == null ? Colors.white54 : Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
-                  if (dompet != null) Text("Sisa: ${Formatters.formatCurrency(dompet.saldoTerkini)}", style: const TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold)),
+                  Text(dompet == null ? "Pilih Dompet..." : dompet.namaAset, style: TextStyle(color: dompet == null ? finance.themeTextSub : finance.themeText, fontSize: 14, fontWeight: FontWeight.bold)),
+                  if (dompet != null) Text("Sisa: ${Formatters.formatCurrency(dompet.saldoTerkini)}", style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
-            const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white54),
+            Icon(Icons.keyboard_arrow_down_rounded, color: finance.themeTextSub),
           ],
         ),
       ),
@@ -160,7 +158,6 @@ class _ReminderScreenState extends State<ReminderScreen> {
     String formDate = DateTime.now().toIso8601String();
     double formNominal = 0;
     
-    // 🟢 Controller buat sinkronisasi tombol Kategori dan Input Teks
     TextEditingController kategoriController = TextEditingController();
 
     showModalBottomSheet(
@@ -173,12 +170,12 @@ class _ReminderScreenState extends State<ReminderScreen> {
             return Container(
               height: MediaQuery.of(context).size.height * 0.85,
               padding: const EdgeInsets.all(24),
-              decoration: const BoxDecoration(color: Color(0xFF161B22), borderRadius: BorderRadius.vertical(top: Radius.circular(32)), border: Border(top: BorderSide(color: Colors.white10))),
+              decoration: BoxDecoration(color: finance.themeBg, borderRadius: const BorderRadius.vertical(top: Radius.circular(32)), border: Border(top: BorderSide(color: finance.themeBorder))),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("Jadwal Baru", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
-                  const Text("RUTINITAS & LANGGANAN", style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                  Text("Jadwal Baru", style: TextStyle(color: finance.themeText, fontSize: 20, fontWeight: FontWeight.w900)),
+                  Text("RUTINITAS & LANGGANAN", style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
                   const SizedBox(height: 24),
 
                   Expanded(
@@ -187,8 +184,7 @@ class _ReminderScreenState extends State<ReminderScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // 🟢 KATEGORI (BISA KLIK ATAU KETIK CUSTOM)
-                          const Text("KATEGORI RUTINITAS", style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+                          Text("KATEGORI RUTINITAS", style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
                           const SizedBox(height: 8),
                           Wrap(
                             spacing: 8, runSpacing: 8,
@@ -199,17 +195,17 @@ class _ReminderScreenState extends State<ReminderScreen> {
                                   HapticFeedback.lightImpact(); 
                                   setModalState(() {
                                     formKategori = kat['name']!;
-                                    kategoriController.text = kat['name']!; // Sinkronisasi text field
+                                    kategoriController.text = kat['name']!; 
                                   }); 
                                 },
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                                   decoration: BoxDecoration(
-                                    color: isActive ? const Color(0xFF9333EA).withValues(alpha:0.2) : Colors.white.withValues(alpha:0.05),
+                                    color: isActive ? finance.themeAccent : finance.themeCard,
                                     borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(color: isActive ? const Color(0xFFA855F7).withValues(alpha:0.5) : Colors.white10),
+                                    border: Border.all(color: isActive ? finance.themeAccent : finance.themeBorder),
                                   ),
-                                  child: Text(kat['name']!, style: TextStyle(color: isActive ? const Color(0xFFD946EF) : Colors.white54, fontSize: 12, fontWeight: FontWeight.bold)),
+                                  child: Text(kat['name']!, style: TextStyle(color: isActive ? Colors.white : finance.themeTextSub, fontSize: 12, fontWeight: FontWeight.bold)),
                                 ),
                               );
                             }).toList(),
@@ -220,20 +216,20 @@ class _ReminderScreenState extends State<ReminderScreen> {
                             onChanged: (val) {
                               setModalState(() => formKategori = val);
                             },
-                            style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                            style: TextStyle(color: finance.themeText, fontSize: 14, fontWeight: FontWeight.bold),
                             decoration: InputDecoration(
-                              filled: true, fillColor: Colors.white.withValues(alpha: 0.05),
-                              hintText: "Atau ketik kategori sendiri...", hintStyle: const TextStyle(color: Colors.white30),
-                              prefixIcon: const Icon(Icons.style_rounded, color: Colors.white54),
+                              filled: true, fillColor: finance.themeCard,
+                              hintText: "Atau ketik kategori sendiri...", hintStyle: TextStyle(color: finance.themeTextSub.withValues(alpha:0.5)),
+                              prefixIcon: Icon(Icons.style_rounded, color: finance.themeTextSub),
                               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Colors.white10)),
-                              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Colors.white10)),
-                              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFF9333EA))),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: finance.themeBorder)),
+                              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: finance.themeBorder)),
+                              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: finance.themeAccent)),
                             ),
                           ),
                           const SizedBox(height: 24),
 
-                          const Center(child: Text("ESTIMASI NOMINAL", style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5))),
+                          Center(child: Text("ESTIMASI NOMINAL", style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5))),
                           const SizedBox(height: 8),
                           GestureDetector(
                             onTap: () {
@@ -243,33 +239,33 @@ class _ReminderScreenState extends State<ReminderScreen> {
                             },
                             child: Container(
                               width: double.infinity, padding: const EdgeInsets.all(24),
-                              decoration: BoxDecoration(color: Colors.white.withValues(alpha:0.05), borderRadius: BorderRadius.circular(24), border: Border.all(color: Colors.white10)),
+                              decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(24), border: Border.all(color: finance.themeBorder)),
                               child: Text(
                                 Formatters.formatCurrency(formNominal), textAlign: TextAlign.center,
-                                style: const TextStyle(color: Color(0xFFD946EF), fontSize: 32, fontWeight: FontWeight.w900),
+                                style: TextStyle(color: finance.themeAccent, fontSize: 32, fontWeight: FontWeight.w900),
                               ),
                             ),
                           ),
                           const SizedBox(height: 24),
 
-                          const Text("NAMA RUTINITAS", style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+                          Text("NAMA RUTINITAS", style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
                           const SizedBox(height: 8),
                           TextField(
                             onChanged: (val) => formTitle = val,
-                            style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                            style: TextStyle(color: finance.themeText, fontSize: 14, fontWeight: FontWeight.bold),
                             decoration: InputDecoration(
-                              filled: true, fillColor: Colors.white.withValues(alpha: 0.05),
-                              hintText: "Misal: Bayar Kosan", hintStyle: const TextStyle(color: Colors.white30),
-                              prefixIcon: const Icon(Icons.edit_rounded, color: Colors.white54),
+                              filled: true, fillColor: finance.themeCard,
+                              hintText: "Misal: Bayar Kosan", hintStyle: TextStyle(color: finance.themeTextSub.withValues(alpha:0.5)),
+                              prefixIcon: Icon(Icons.edit_rounded, color: finance.themeTextSub),
                               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Colors.white10)),
-                              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Colors.white10)),
-                              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFF9333EA))),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: finance.themeBorder)),
+                              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: finance.themeBorder)),
+                              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: finance.themeAccent)),
                             ),
                           ),
                           const SizedBox(height: 16),
 
-                          const Text("TANGGAL JATUH TEMPO", style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+                          Text("TANGGAL JATUH TEMPO", style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
                           const SizedBox(height: 8),
                           GestureDetector(
                             onTap: () async {
@@ -278,12 +274,12 @@ class _ReminderScreenState extends State<ReminderScreen> {
                             },
                             child: Container(
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                              decoration: BoxDecoration(color: Colors.white.withValues(alpha:0.05), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white10)),
+                              decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(16), border: Border.all(color: finance.themeBorder)),
                               child: Row(
                                 children: [
-                                  const Icon(Icons.calendar_month_rounded, color: Colors.white54, size: 20),
+                                  Icon(Icons.calendar_month_rounded, color: finance.themeTextSub, size: 20),
                                   const SizedBox(width: 12),
-                                  Text(_getTanggalLengkap(DateTime.parse(formDate)), style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                                  Text(_getTanggalLengkap(DateTime.parse(formDate)), style: TextStyle(color: finance.themeText, fontSize: 14, fontWeight: FontWeight.bold)),
                                 ],
                               ),
                             ),
@@ -343,12 +339,12 @@ class _ReminderScreenState extends State<ReminderScreen> {
             return Container(
               height: MediaQuery.of(context).size.height * 0.85,
               padding: const EdgeInsets.all(24),
-              decoration: const BoxDecoration(color: Color(0xFF161B22), borderRadius: BorderRadius.vertical(top: Radius.circular(32)), border: Border(top: BorderSide(color: Colors.white10))),
+              decoration: BoxDecoration(color: finance.themeBg, borderRadius: const BorderRadius.vertical(top: Radius.circular(32)), border: Border(top: BorderSide(color: finance.themeBorder))),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("Tandai Selesai", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
-                  Text(reminder.title.toUpperCase(), style: const TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                  Text("Tandai Selesai", style: TextStyle(color: finance.themeText, fontSize: 20, fontWeight: FontWeight.w900)),
+                  Text(reminder.title.toUpperCase(), style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
                   const SizedBox(height: 32),
 
                   Expanded(
@@ -356,7 +352,7 @@ class _ReminderScreenState extends State<ReminderScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Center(child: Text("NOMINAL EKSEKUSI", style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5))),
+                          Center(child: Text("NOMINAL EKSEKUSI", style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5))),
                           const SizedBox(height: 8),
                           GestureDetector(
                             onTap: () {
@@ -366,18 +362,18 @@ class _ReminderScreenState extends State<ReminderScreen> {
                             },
                             child: Container(
                               width: double.infinity, padding: const EdgeInsets.all(24),
-                              decoration: BoxDecoration(color: const Color(0xFF9333EA).withValues(alpha:0.1), borderRadius: BorderRadius.circular(24), border: Border.all(color: const Color(0xFF9333EA).withValues(alpha:0.3))),
+                              decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(24), border: Border.all(color: finance.themeBorder)),
                               child: Column(
                                 children: [
-                                  Text(Formatters.formatCurrency(payNominal), style: const TextStyle(color: Color(0xFFD946EF), fontSize: 32, fontWeight: FontWeight.w900)),
-                                  if (payCatatan.isNotEmpty) ...[const SizedBox(height: 8), Text("📝 $payCatatan", style: const TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold))],
+                                  Text(Formatters.formatCurrency(payNominal), style: TextStyle(color: finance.themeAccent, fontSize: 32, fontWeight: FontWeight.w900)),
+                                  if (payCatatan.isNotEmpty) ...[const SizedBox(height: 8), Text("📝 $payCatatan", style: TextStyle(color: finance.themeTextSub, fontSize: 12, fontWeight: FontWeight.bold))],
                                 ],
                               ),
                             ),
                           ),
                           const SizedBox(height: 24),
 
-                          const Text("BAYAR PAKAI DOMPET MANA?", style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+                          Text("BAYAR PAKAI DOMPET MANA?", style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
                           const SizedBox(height: 8),
                           _buildWalletSelector(payWallet, finance, () {
                             _showWalletPicker(finance, (id) => setModalState(() => payWallet = id));
@@ -387,24 +383,27 @@ class _ReminderScreenState extends State<ReminderScreen> {
                           // Toggle Jadwalkan Ulang (Recurring)
                           Container(
                             padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(color: Colors.white.withValues(alpha:0.05), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white10)),
+                            decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(16), border: Border.all(color: finance.themeBorder)),
                             child: Row(
                               children: [
-                                Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: const Color(0xFF9333EA).withValues(alpha:0.2), shape: BoxShape.circle), child: const Icon(Icons.repeat_rounded, color: Color(0xFFD946EF), size: 16)),
+                                Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: finance.themeAccent.withValues(alpha:0.15), shape: BoxShape.circle), child: Icon(Icons.repeat_rounded, color: finance.themeAccent, size: 16)),
                                 const SizedBox(width: 12),
-                                const Expanded(
+                                Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text("Jadwalkan Ulang?", style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
-                                      Text("Otomatis buat tagihan bulan depan", style: TextStyle(color: Colors.white54, fontSize: 10)),
+                                      Text("Jadwalkan Ulang?", style: TextStyle(color: finance.themeText, fontSize: 14, fontWeight: FontWeight.bold)),
+                                      Text("Otomatis buat tagihan bulan depan", style: TextStyle(color: finance.themeTextSub, fontSize: 10)),
                                     ],
                                   ),
                                 ),
                                 Switch(
                                   value: isRecurring,
                                   onChanged: (val) { HapticFeedback.lightImpact(); setModalState(() => isRecurring = val); },
-                                  activeThumbColor: const Color(0xFFD946EF), activeTrackColor: const Color(0xFF9333EA).withValues(alpha:0.5),
+                                  thumbColor: WidgetStatePropertyAll(finance.themeAccent), 
+                                  activeTrackColor: finance.themeAccent.withValues(alpha:0.3),
+                                  inactiveThumbColor: finance.themeTextSub,
+                                  inactiveTrackColor: finance.themeBorder,
                                 )
                               ],
                             ),
@@ -456,16 +455,16 @@ class _ReminderScreenState extends State<ReminderScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF161B22),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: const BorderSide(color: Colors.white10)),
+        backgroundColor: finance.themeBg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: BorderSide(color: finance.themeBorder)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.pinkAccent.withValues(alpha:0.1), shape: BoxShape.circle), child: const Icon(Icons.delete_outline_rounded, color: Colors.pinkAccent, size: 32)),
+            Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.redAccent.withValues(alpha:0.1), shape: BoxShape.circle), child: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 32)),
             const SizedBox(height: 16),
-            const Text("Hapus Jadwal?", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900)),
+            Text("Hapus Jadwal?", style: TextStyle(color: finance.themeText, fontSize: 18, fontWeight: FontWeight.w900)),
             const SizedBox(height: 8),
-            const Text("Jadwal pengingat ini akan dihapus permanen. (Riwayat transaksi yang sudah terjadi tidak akan terhapus).", textAlign: TextAlign.center, style: TextStyle(color: Colors.white54, fontSize: 12)),
+            Text("Jadwal pengingat ini akan dihapus permanen. (Riwayat transaksi yang sudah terjadi tidak akan terhapus).", textAlign: TextAlign.center, style: TextStyle(color: finance.themeTextSub, fontSize: 12)),
             const SizedBox(height: 24),
             CustomButton(text: "Ya, Hapus", variant: ButtonVariant.danger, fullWidth: true, onPressed: () {
               finance.deleteReminder(r.id);
@@ -500,7 +499,7 @@ class _ReminderScreenState extends State<ReminderScreen> {
     ReminderModel? nextUrgent = pending.isNotEmpty ? pending.first : null;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF05010D),
+      backgroundColor: finance.themeBg, // 🟢 Latar Solid
       body: SafeArea(
         child: Column(
           children: [
@@ -512,11 +511,11 @@ class _ReminderScreenState extends State<ReminderScreen> {
                 children: [
                   GestureDetector(
                     onTap: () { HapticFeedback.lightImpact(); Navigator.pop(context); },
-                    child: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: Colors.white.withValues(alpha:0.05), shape: BoxShape.circle), child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20)),
+                    child: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: finance.themeCard, shape: BoxShape.circle, border: Border.all(color: finance.themeBorder)), child: Icon(Icons.arrow_back_ios_new_rounded, color: finance.themeTextSub, size: 20)),
                   ),
-                  const Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                    Text("Pengingat", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900)),
-                    Text("TAGIHAN & LANGGANAN", style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                  Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                    Text("Pengingat", style: TextStyle(color: finance.themeText, fontSize: 24, fontWeight: FontWeight.w900)),
+                    Text("TAGIHAN & LANGGANAN", style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
                   ]),
                 ],
               ),
@@ -528,13 +527,12 @@ class _ReminderScreenState extends State<ReminderScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
                   children: [
-                    // --- KARTU DASHBOARD UTAMA ---
+                    // --- KARTU DASHBOARD UTAMA (Flat Solid Aksen) ---
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF7C3AED), Color(0xFFD946EF)]),
+                        color: finance.themeAccent, // 🟢 Pakai warna Aksen lu!
                         borderRadius: BorderRadius.circular(24),
-                        boxShadow: [BoxShadow(color: const Color(0xFFA855F7).withValues(alpha:0.3), blurRadius: 20)],
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -542,12 +540,12 @@ class _ReminderScreenState extends State<ReminderScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), decoration: BoxDecoration(color: Colors.black.withValues(alpha:0.3), borderRadius: BorderRadius.circular(12)), child: const Row(children: [Icon(Icons.calendar_month_rounded, color: Color(0xFFD946EF), size: 14), SizedBox(width: 6), Text("BULAN INI", style: TextStyle(color: Color(0xFFD946EF), fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.0))])),
+                              Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), decoration: BoxDecoration(color: Colors.black.withValues(alpha:0.2), borderRadius: BorderRadius.circular(12)), child: const Row(children: [Icon(Icons.calendar_month_rounded, color: Colors.white, size: 14), SizedBox(width: 6), Text("BULAN INI", style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.0))])),
                             ],
                           ),
                           const SizedBox(height: 16),
-                          const Text("ESTIMASI PENGELUARAN", style: TextStyle(color: Color(0xFFA855F7), fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
-                          Text(Formatters.formatCurrency(totalPendingNominal), style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.w900, shadows: [Shadow(color: Colors.black45, blurRadius: 10)])),
+                          const Text("ESTIMASI PENGELUARAN", style: TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+                          Text(Formatters.formatCurrency(totalPendingNominal), style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.w900)),
                           const SizedBox(height: 24),
                           
                           if (nextUrgent != null)
@@ -557,17 +555,17 @@ class _ReminderScreenState extends State<ReminderScreen> {
                               child: Row(
                                 children: [
                                   Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                    const Text("JADWAL TERDEKAT", style: TextStyle(color: Colors.white54, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
+                                    const Text("JADWAL TERDEKAT", style: TextStyle(color: Colors.white70, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
                                     const SizedBox(height: 4),
                                     Text(nextUrgent.title, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
                                   ])),
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                    decoration: BoxDecoration(color: Formatters.getDaysLeft(nextUrgent.dueDate) <= 3 ? Colors.amber.withValues(alpha:0.2) : Colors.white.withValues(alpha:0.1), borderRadius: BorderRadius.circular(12), border: Border.all(color: Formatters.getDaysLeft(nextUrgent.dueDate) <= 3 ? Colors.amber.withValues(alpha:0.5) : Colors.white24)),
+                                    decoration: BoxDecoration(color: Formatters.getDaysLeft(nextUrgent.dueDate) <= 3 ? Colors.amber.withValues(alpha:0.2) : Colors.white.withValues(alpha:0.15), borderRadius: BorderRadius.circular(12)),
                                     child: Column(
                                       children: [
-                                        Text(Formatters.getDaysLeft(nextUrgent.dueDate) < 0 ? '!' : '${Formatters.getDaysLeft(nextUrgent.dueDate)}', style: TextStyle(color: Formatters.getDaysLeft(nextUrgent.dueDate) <= 3 ? Colors.amber : Colors.white, fontSize: 16, fontWeight: FontWeight.w900)),
-                                        Text(Formatters.getDaysLeft(nextUrgent.dueDate) < 0 ? 'LEWAT' : Formatters.getDaysLeft(nextUrgent.dueDate) == 0 ? 'HARI INI' : 'HARI LAGI', style: TextStyle(color: Formatters.getDaysLeft(nextUrgent.dueDate) <= 3 ? Colors.amber : Colors.white54, fontSize: 8, fontWeight: FontWeight.w900)),
+                                        Text(Formatters.getDaysLeft(nextUrgent.dueDate) < 0 ? '!' : '${Formatters.getDaysLeft(nextUrgent.dueDate)}', style: TextStyle(color: Formatters.getDaysLeft(nextUrgent.dueDate) <= 3 ? Colors.amberAccent : Colors.white, fontSize: 16, fontWeight: FontWeight.w900)),
+                                        Text(Formatters.getDaysLeft(nextUrgent.dueDate) < 0 ? 'LEWAT' : Formatters.getDaysLeft(nextUrgent.dueDate) == 0 ? 'HARI INI' : 'HARI LAGI', style: TextStyle(color: Formatters.getDaysLeft(nextUrgent.dueDate) <= 3 ? Colors.amberAccent : Colors.white70, fontSize: 8, fontWeight: FontWeight.w900)),
                                       ],
                                     ),
                                   )
@@ -575,7 +573,7 @@ class _ReminderScreenState extends State<ReminderScreen> {
                               ),
                             )
                           else
-                            Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: Colors.black.withValues(alpha:0.2), borderRadius: BorderRadius.circular(16)), child: const Row(children: [Icon(Icons.check_circle_rounded, color: Colors.greenAccent, size: 24), SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text("Semua Beres!", style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)), Text("Jadwal kamu bulan ini kosong.", style: TextStyle(color: Colors.white54, fontSize: 10))]))]))
+                            Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: Colors.black.withValues(alpha:0.2), borderRadius: BorderRadius.circular(16)), child: const Row(children: [Icon(Icons.check_circle_rounded, color: Colors.greenAccent, size: 24), SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text("Semua Beres!", style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)), Text("Jadwal kamu bulan ini kosong.", style: TextStyle(color: Colors.white70, fontSize: 10))]))]))
                         ],
                       ),
                     ),
@@ -585,7 +583,7 @@ class _ReminderScreenState extends State<ReminderScreen> {
                     // --- TABS ---
                     Container(
                       padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(color: Colors.white.withValues(alpha:0.05), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.white10)),
+                      decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(20), border: Border.all(color: finance.themeBorder)),
                       child: Row(
                         children: ['SEMUA', 'MINGGU INI', 'LEWAT TENGGAT'].map((tab) {
                           bool isActive = _activeTab == tab;
@@ -594,9 +592,9 @@ class _ReminderScreenState extends State<ReminderScreen> {
                               onTap: () { HapticFeedback.lightImpact(); setState(() => _activeTab = tab); },
                               child: Container(
                                 padding: const EdgeInsets.symmetric(vertical: 12),
-                                decoration: BoxDecoration(color: isActive ? Colors.white.withValues(alpha:0.1) : Colors.transparent, borderRadius: BorderRadius.circular(16)),
+                                decoration: BoxDecoration(color: isActive ? finance.themeAccent.withValues(alpha:0.15) : Colors.transparent, borderRadius: BorderRadius.circular(16)),
                                 alignment: Alignment.center,
-                                child: Text(tab, style: TextStyle(color: isActive ? const Color(0xFFD946EF) : Colors.white54, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
+                                child: Text(tab, style: TextStyle(color: isActive ? finance.themeAccent : finance.themeTextSub, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
                               ),
                             ),
                           );
@@ -610,29 +608,39 @@ class _ReminderScreenState extends State<ReminderScreen> {
                     if (pending.isEmpty)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 40),
-                        child: Center(child: Text(_activeTab == 'SEMUA' ? "Belum ada jadwal rutinitas." : "Aman! Nggak ada jadwal darurat.", style: TextStyle(color: Colors.white.withValues(alpha:0.3), fontWeight: FontWeight.bold))),
+                        child: Center(child: Text(_activeTab == 'SEMUA' ? "Belum ada jadwal rutinitas." : "Aman! Nggak ada jadwal darurat.", style: TextStyle(color: finance.themeTextSub.withValues(alpha:0.5), fontWeight: FontWeight.bold))),
                       )
                     else
                       ...pending.map((r) {
                         int daysLeft = Formatters.getDaysLeft(r.dueDate);
                         bool isUrgent = daysLeft >= 0 && daysLeft <= 3;
                         bool isOverdue = daysLeft < 0;
-                        var theme = _getTypeProps(r.kategori);
+                        var theme = _getTypeProps(r.kategori, finance);
 
-                        return GlassCard(
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 12),
                           padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: finance.themeCard, 
+                            borderRadius: BorderRadius.circular(24), 
+                            border: Border.all(color: isOverdue ? Colors.redAccent.withValues(alpha:0.5) : finance.themeBorder)
+                          ),
                           child: Column(
                             children: [
                               Row(
                                 children: [
                                   Container(
                                     width: 50, height: 50,
-                                    decoration: BoxDecoration(color: isOverdue ? Colors.pinkAccent.withValues(alpha:0.1) : isUrgent ? Colors.amber.withValues(alpha:0.1) : const Color(0xFFA855F7).withValues(alpha:0.1), borderRadius: BorderRadius.circular(16), border: Border.all(color: isOverdue ? Colors.pinkAccent.withValues(alpha:0.3) : isUrgent ? Colors.amber.withValues(alpha:0.3) : const Color(0xFFA855F7).withValues(alpha:0.3))),
+                                    decoration: BoxDecoration(
+                                      color: isOverdue ? Colors.redAccent.withValues(alpha:0.1) : (isUrgent ? Colors.orange.withValues(alpha:0.1) : finance.themeAccent.withValues(alpha:0.1)), 
+                                      borderRadius: BorderRadius.circular(16), 
+                                      border: Border.all(color: isOverdue ? Colors.redAccent.withValues(alpha:0.3) : (isUrgent ? Colors.orange.withValues(alpha:0.3) : finance.themeAccent.withValues(alpha:0.3)))
+                                    ),
                                     child: Column(
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
-                                        Text(_getBulanIndo(DateTime.parse(r.dueDate)), style: TextStyle(color: isOverdue ? Colors.pinkAccent : isUrgent ? Colors.amber : const Color(0xFFD946EF), fontSize: 10, fontWeight: FontWeight.w900)),
-                                        Text(DateTime.parse(r.dueDate).day.toString().padLeft(2, '0'), style: TextStyle(color: isOverdue ? Colors.pinkAccent : isUrgent ? Colors.amber : const Color(0xFFA855F7), fontSize: 18, fontWeight: FontWeight.w900)),
+                                        Text(_getBulanIndo(DateTime.parse(r.dueDate)), style: TextStyle(color: isOverdue ? Colors.redAccent : (isUrgent ? Colors.orange : finance.themeAccent), fontSize: 10, fontWeight: FontWeight.w900)),
+                                        Text(DateTime.parse(r.dueDate).day.toString().padLeft(2, '0'), style: TextStyle(color: isOverdue ? Colors.redAccent : (isUrgent ? Colors.orange : finance.themeAccent), fontSize: 18, fontWeight: FontWeight.w900)),
                                       ],
                                     ),
                                   ),
@@ -641,7 +649,7 @@ class _ReminderScreenState extends State<ReminderScreen> {
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text(r.title, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w900)),
+                                        Text(r.title, style: TextStyle(color: finance.themeText, fontSize: 14, fontWeight: FontWeight.w900)),
                                         const SizedBox(height: 4),
                                         Row(
                                           children: [
@@ -649,13 +657,13 @@ class _ReminderScreenState extends State<ReminderScreen> {
                                             const SizedBox(width: 4),
                                             Text(r.kategori, style: TextStyle(color: theme['color'], fontSize: 10, fontWeight: FontWeight.bold)),
                                             const SizedBox(width: 8),
-                                            Text(isOverdue ? "LEWAT TENGGAT" : daysLeft == 0 ? "HARI INI" : "$daysLeft HARI LAGI", style: TextStyle(color: isOverdue ? Colors.pinkAccent : isUrgent ? Colors.amber : Colors.white54, fontSize: 10, fontWeight: FontWeight.w900)),
+                                            Text(isOverdue ? "LEWAT TENGGAT" : daysLeft == 0 ? "HARI INI" : "$daysLeft HARI LAGI", style: TextStyle(color: isOverdue ? Colors.redAccent : isUrgent ? Colors.orange : finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.w900)),
                                           ],
                                         )
                                       ],
                                     ),
                                   ),
-                                  Text(Formatters.formatCurrency(r.nominal), style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w900)),
+                                  Text(Formatters.formatCurrency(r.nominal), style: TextStyle(color: finance.themeText, fontSize: 14, fontWeight: FontWeight.w900)),
                                 ],
                               ),
                               const SizedBox(height: 16),
@@ -663,7 +671,7 @@ class _ReminderScreenState extends State<ReminderScreen> {
                                 children: [
                                   GestureDetector(
                                     onTap: () => _confirmDelete(r, finance),
-                                    child: Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), decoration: BoxDecoration(color: Colors.white.withValues(alpha:0.05), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white10)), child: const Icon(Icons.delete_outline_rounded, color: Colors.white54, size: 20)),
+                                    child: Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), decoration: BoxDecoration(color: finance.themeBg, borderRadius: BorderRadius.circular(16), border: Border.all(color: finance.themeBorder)), child: Icon(Icons.delete_outline_rounded, color: finance.themeTextSub, size: 20)),
                                   ),
                                   
                                   const SizedBox(width: 12),
@@ -683,18 +691,20 @@ class _ReminderScreenState extends State<ReminderScreen> {
 
                     // --- LIST SELESAI ---
                     if (done.isNotEmpty) ...[
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 16),
-                        child: Row(children: [Expanded(child: Divider(color: Colors.white10)), Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: Text("RIWAYAT SELESAI", style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2.0))), Expanded(child: Divider(color: Colors.white10))]),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        child: Row(children: [Expanded(child: Divider(color: finance.themeBorder)), Padding(padding: const EdgeInsets.symmetric(horizontal: 12), child: Text("RIWAYAT SELESAI", style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2.0))), Expanded(child: Divider(color: finance.themeBorder))]),
                       ),
-                      ...done.map((r) => GlassCard(
+                      ...done.map((r) => Container(
+                        margin: const EdgeInsets.only(bottom: 12),
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(20), border: Border.all(color: finance.themeBorder)),
                         child: Row(
                           children: [
-                            Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: Colors.greenAccent.withValues(alpha:0.1), shape: BoxShape.circle), child: const Icon(Icons.check_rounded, color: Colors.greenAccent, size: 16)),
+                            Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: Colors.green.withValues(alpha:0.1), shape: BoxShape.circle), child: const Icon(Icons.check_rounded, color: Colors.green, size: 16)),
                             const SizedBox(width: 16),
-                            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(r.title, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold, decoration: TextDecoration.lineThrough)), const Text("Selesai Dibayar", style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold))])),
-                            GestureDetector(onTap: () => _confirmDelete(r, finance), child: const Icon(Icons.delete_outline_rounded, color: Colors.white30, size: 18)),
+                            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(r.title, style: TextStyle(color: finance.themeText, fontSize: 14, fontWeight: FontWeight.bold, decoration: TextDecoration.lineThrough)), Text("Selesai Dibayar", style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.bold))])),
+                            GestureDetector(onTap: () => _confirmDelete(r, finance), child: Icon(Icons.delete_outline_rounded, color: finance.themeTextSub.withValues(alpha:0.5), size: 18)),
                           ],
                         ),
                       )),
