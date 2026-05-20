@@ -3,6 +3,8 @@
 <plist version="1.0">
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Aplikasi membutuhkan Face ID untuk mengamankan data keuanganmu.</string>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>

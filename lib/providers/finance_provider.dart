@@ -9,8 +9,35 @@ import 'package:aplikasi_keuangan/models/saving_model.dart';
 import 'package:aplikasi_keuangan/models/debt_model.dart';
 import 'package:aplikasi_keuangan/models/reminder_model.dart';
 import 'package:aplikasi_keuangan/services/local_storage_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class FinanceProvider with ChangeNotifier {
+  // Di dalam class FinanceProvider
+String _userPin = '';
+  String get userPin => _userPin;
+
+int _pinLockoutUntil = 0;
+  int get pinLockoutUntil => _pinLockoutUntil;
+
+  // 🟢 2. FUNGSI UNTUK NGELOAD PIN DARI STORAGE HP
+  Future<void> loadPin() async {
+    final prefs = await SharedPreferences.getInstance();
+    _userPin = prefs.getString('user_pin') ?? ''; // Tarik data dari HP
+    notifyListeners();
+  }
+
+  // 🟢 3. FUNGSI UNTUK MERUBAH & MENYIMPAN PIN BARU
+  Future<void> updateUserPin(String? newPin) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (newPin == null) {
+      _userPin = '';
+      await prefs.remove('user_pin'); // Hapus dari HP kalau dinonaktifkan
+    } else {
+      _userPin = newPin;
+      await prefs.setString('user_pin', newPin); // Kunci data baru ke HP
+    }
+    notifyListeners();
+  }
 
   // =========================================
   // 🎨 TEMA: DARK/LIGHT MODE + CUSTOM AKSEN
@@ -76,7 +103,40 @@ class FinanceProvider with ChangeNotifier {
     );
   }
 
+Future<void> loadLockout() async {
+    final prefs = await SharedPreferences.getInstance();
+    _pinLockoutUntil = prefs.getInt('pin_lockout_until') ?? 0;
+    
+    // Kalau waktu penundaan ternyata udah lewat, otomatis basmi PIN-nya biar bebas masuk
+    if (_pinLockoutUntil > 0 && DateTime.now().millisecondsSinceEpoch >= _pinLockoutUntil) {
+      _userPin = '';
+      _pinLockoutUntil = 0;
+      await prefs.remove('user_pin');
+      await prefs.remove('pin_lockout_until');
+    }
+    notifyListeners();
+  }
+
+Future<void> startForgotPinLockout() async {
+    final prefs = await SharedPreferences.getInstance();
+    // 24 jam dari sekarang = 24 jam * 60 menit * 60 detik * 1000 milidetik
+    _pinLockoutUntil = DateTime.now().millisecondsSinceEpoch + (24 * 60 * 60 * 1000); 
+    await prefs.setInt('pin_lockout_until', _pinLockoutUntil);
+    notifyListeners();
+  }
+
+Future<void> clearLockoutAndResetPin() async {
+    final prefs = await SharedPreferences.getInstance();
+    _userPin = '';
+    _pinLockoutUntil = 0;
+    await prefs.remove('user_pin');
+    await prefs.remove('pin_lockout_until');
+    notifyListeners();
+  }
+
   Future<void> initData() async {
+    await loadPin();
+    await loadLockout();
     // 🟢 LOAD TEMA & AKSEN
     final savedTheme = await LocalStorageService.loadData('is_dark_mode');
     if (savedTheme != null) _isDarkMode = savedTheme as bool;
@@ -310,5 +370,7 @@ class FinanceProvider with ChangeNotifier {
     LocalStorageService.saveData('all_savings', allSavings.map((e) => e.toJson()).toList()); 
     LocalStorageService.saveData('all_debts', allDebts.map((e) => e.toJson()).toList()); 
     LocalStorageService.saveData('all_reminders', allReminders.map((e) => e.toJson()).toList()); 
+
+    
   }
 }

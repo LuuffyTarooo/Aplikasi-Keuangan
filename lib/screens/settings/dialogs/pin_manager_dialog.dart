@@ -120,13 +120,17 @@ class _PinManagerScreenState extends State<PinManagerScreen> with SingleTickerPr
     }
   }
 
-  void _processPin(String currentPin) {
+void _processPin(String currentPin) {
     if (_step == 'VERIFY') {
       if (currentPin == widget.currentPin) {
         if (_actionTarget == 'DISABLE') {
           HapticFeedback.heavyImpact();
+          
+          // 🟢 POTONGAN BARU: Ambil provider dan hapus PIN dari storage HP
+          final finance = Provider.of<FinanceProvider>(context, listen: false);
+          finance.updateUserPin(null); 
+          
           widget.onPinChanged(null);
-          // 🟢 Langsung ubah UI ke sukses, jangan nunggu diam
           setState(() { _isSuccess = true; _pin = ''; });
           Future.delayed(const Duration(milliseconds: 1000), () {
             if (mounted) Navigator.pop(context); 
@@ -144,8 +148,12 @@ class _PinManagerScreenState extends State<PinManagerScreen> with SingleTickerPr
     } else if (_step == 'CONFIRM') {
       if (currentPin == _tempPin) {
         HapticFeedback.heavyImpact();
+        
+        // 🟢 POTONGAN BARU: Ambil provider dan simpen PIN baru ke storage HP
+        final finance = Provider.of<FinanceProvider>(context, listen: false);
+        finance.updateUserPin(currentPin); 
+
         widget.onPinChanged(currentPin);
-        // 🟢 Langsung ubah UI ke sukses, jangan nunggu diam
         setState(() { _isSuccess = true; _pin = ''; });
         Future.delayed(const Duration(milliseconds: 1000), () {
           if (mounted) Navigator.pop(context); 
