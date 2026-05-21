@@ -24,7 +24,6 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _isDarkMode = true;
-  String _mataUang = 'IDR';
   String _appPin = ""; 
 
   @override
@@ -38,7 +37,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _appPin = prefs.getString('app_pin') ?? "";
-      _mataUang = prefs.getString('app_currency') ?? "IDR";
       // Note: Dark mode udah otomatis diurus di FinanceProvider lu
     });
   }
@@ -80,44 +78,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
   }
 
-  void _openCurrencyModal(FinanceProvider finance) {
-    HapticFeedback.mediumImpact();
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(color: finance.themeBg, borderRadius: const BorderRadius.vertical(top: Radius.circular(32)), border: Border(top: BorderSide(color: finance.themeBorder))),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text("Pilih Mata Uang", style: TextStyle(color: finance.themeText, fontSize: 18, fontWeight: FontWeight.w900)),
-            const SizedBox(height: 16),
-            ListTile(
-              title: Text("Rupiah (IDR)", style: TextStyle(color: finance.themeText, fontWeight: FontWeight.bold)),
-              trailing: _mataUang == 'IDR' ? Icon(Icons.check_circle_rounded, color: finance.themeAccent) : null,
-              onTap: () async { 
-                setState(() => _mataUang = 'IDR'); 
-                final prefs = await SharedPreferences.getInstance();
-                await prefs.setString('app_currency', 'IDR'); // 🟢 Save Permanen
-                if (context.mounted) Navigator.pop(context); 
-              },
-            ),
-            ListTile(
-              title: Text("US Dollar (USD)", style: TextStyle(color: finance.themeText, fontWeight: FontWeight.bold)),
-              trailing: _mataUang == 'USD' ? Icon(Icons.check_circle_rounded, color: finance.themeAccent) : null,
-              onTap: () async { 
-                setState(() => _mataUang = 'USD'); 
-                final prefs = await SharedPreferences.getInstance();
-                await prefs.setString('app_currency', 'USD'); // 🟢 Save Permanen
-                if (context.mounted) Navigator.pop(context); 
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -170,9 +131,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     // 1. General Section
                     GeneralSettings(
                       isDarkMode: _isDarkMode,
-                      mataUang: _mataUang,
                       onThemeChanged: (val) => setState(() => _isDarkMode = val),
-                      onOpenCurrencyModal: () => _openCurrencyModal(finance),
                     ),
                     const SizedBox(height: 16),
 

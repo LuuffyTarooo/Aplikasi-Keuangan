@@ -12,6 +12,7 @@ class CustomButton extends StatelessWidget {
   final IconData? icon;
   final bool isLoading;
   final bool fullWidth;
+  final EdgeInsetsGeometry? padding;
 
   const CustomButton({
     super.key,
@@ -21,6 +22,7 @@ class CustomButton extends StatelessWidget {
     this.icon,
     this.isLoading = false,
     this.fullWidth = false,
+    this.padding,
   });
 
   @override
@@ -61,7 +63,7 @@ class CustomButton extends StatelessWidget {
       onTap: isLoading ? null : onPressed,
       child: Container(
         width: fullWidth ? double.infinity : null,
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+        padding: padding ?? const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
         decoration: BoxDecoration(
           color: bgColor,
           borderRadius: BorderRadius.circular(24),
@@ -83,9 +85,12 @@ class CustomButton extends StatelessWidget {
               const SizedBox(width: 8),
             ],
             if (!isLoading)
-              Text(
-                text,
-                style: TextStyle(color: textColor, fontWeight: FontWeight.w900, fontSize: 14),
+              Flexible(
+                child: Text(
+                  text,
+                  style: TextStyle(color: textColor, fontWeight: FontWeight.w900, fontSize: 14),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
           ],
         ),

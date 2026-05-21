@@ -6,20 +6,18 @@ import 'package:provider/provider.dart';
 import 'package:aplikasi_keuangan/providers/finance_provider.dart';
 import 'package:aplikasi_keuangan/screens/settings/widgets/setting_ui.dart';
 // 🟢 FIX: Jalur import disesuaikan sama letak file yang bener
-import 'package:aplikasi_keuangan/core/theme/theme_customizer_sheet.dart'; 
+import 'package:aplikasi_keuangan/core/theme/theme_customizer_sheet.dart';
+import 'package:aplikasi_keuangan/screens/manage_category_screen.dart'; 
+import 'package:aplikasi_keuangan/shared/bottom_sheets/currency_selector_sheet.dart';
 
 class GeneralSettings extends StatefulWidget {
   final bool isDarkMode;
   final Function(bool) onThemeChanged;
-  final String mataUang;
-  final VoidCallback onOpenCurrencyModal;
 
   const GeneralSettings({
     super.key,
     required this.isDarkMode,
     required this.onThemeChanged,
-    required this.mataUang,
-    required this.onOpenCurrencyModal,
   });
 
   @override
@@ -27,8 +25,6 @@ class GeneralSettings extends StatefulWidget {
 }
 
 class _GeneralSettingsState extends State<GeneralSettings> {
-  bool _notifications = true;
-
   @override
   Widget build(BuildContext context) {
     // 🟢 AUTO-SYNC: Ambil data tema dari provider
@@ -42,10 +38,10 @@ class _GeneralSettingsState extends State<GeneralSettings> {
           icon: Icons.notifications_rounded,
           title: "Notifikasi",
           trailing: Switch(
-            value: _notifications,
+            value: finance.isNotificationEnabled,
             onChanged: (val) {
               HapticFeedback.lightImpact();
-              setState(() => _notifications = val);
+              finance.toggleNotification(val);
             },
             // 🟢 FIX: Pake WidgetStatePropertyAll biar ga muncul Warning di VS Code
             thumbColor: WidgetStatePropertyAll(finance.themeAccent), 
@@ -85,6 +81,20 @@ class _GeneralSettingsState extends State<GeneralSettings> {
           },
         ),
 
+        // Manajemen Kategori
+        SettingsItem(
+          icon: Icons.category_rounded,
+          title: "Manajemen Kategori",
+          trailing: Icon(Icons.chevron_right_rounded, color: finance.themeTextSub, size: 18),
+          onTap: () {
+            HapticFeedback.mediumImpact();
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const ManageCategoryScreen()),
+            );
+          },
+        ),
+
         // Mata Uang
         SettingsItem(
           icon: Icons.attach_money_rounded,
@@ -97,11 +107,14 @@ class _GeneralSettingsState extends State<GeneralSettings> {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
-              widget.mataUang,
-              style: TextStyle(color: finance.themeAccent, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5), // 🟢 AUTO-SYNC
+              finance.currentCurrency.code,
+              style: TextStyle(color: finance.themeAccent, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5), 
             ),
           ),
-          onTap: widget.onOpenCurrencyModal,
+          onTap: () {
+            HapticFeedback.mediumImpact();
+            CurrencySelectorSheet.show(context);
+          },
         ),
       ],
     );

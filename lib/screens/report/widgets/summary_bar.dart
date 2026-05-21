@@ -40,9 +40,9 @@ class _SummaryBarState extends State<SummaryBar> {
 
   String _formatAjaib(double n) {
     if (n.abs() >= 1000000) {
-      return "Rp ${Formatters.formatUangCompact(n).replaceAll(RegExp(r'^Rp\s?'), '')}";
+      return Formatters.formatUangCompact(n);
     } else {
-      return "Rp ${Formatters.formatCurrency(n).replaceAll(RegExp(r'^Rp\s?'), '')}";
+      return Formatters.formatCurrency(n);
     }
   }
 

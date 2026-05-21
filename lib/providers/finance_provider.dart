@@ -10,6 +10,9 @@ import 'package:aplikasi_keuangan/models/debt_model.dart';
 import 'package:aplikasi_keuangan/models/reminder_model.dart';
 import 'package:aplikasi_keuangan/services/local_storage_service.dart';
 import 'package:aplikasi_keuangan/core/constants/app_constants.dart';
+import 'package:aplikasi_keuangan/models/currency_model.dart';
+import 'package:aplikasi_keuangan/utils/currency_manager.dart';
+import 'package:aplikasi_keuangan/core/utils/formatters.dart';
 
 // Mixin imports
 import 'package:aplikasi_keuangan/providers/mixins/theme_mixin.dart';
@@ -23,6 +26,7 @@ import 'package:aplikasi_keuangan/providers/mixins/reminder_mixin.dart';
 import 'package:aplikasi_keuangan/providers/mixins/user_mixin.dart';
 import 'package:aplikasi_keuangan/providers/mixins/voice_mixin.dart';
 import 'package:aplikasi_keuangan/providers/mixins/report_mixin.dart';
+import 'package:aplikasi_keuangan/providers/mixins/category_mixin.dart';
 
 /// Provider utama aplikasi keuangan.
 ///
@@ -41,7 +45,8 @@ class FinanceProvider extends ChangeNotifier
         ReminderMixin,
         UserMixin,
         VoiceMixin,
-        ReportMixin {
+        ReportMixin,
+        CategoryMixin {
 
   // =========================================
   // 📦 STATE FIELDS
@@ -60,6 +65,7 @@ class FinanceProvider extends ChangeNotifier
   @override
   List<TransactionModel> allTransaksi = [];
 
+  @override
   List<CategoryModel> allKategori = [];
 
   @override
@@ -73,6 +79,8 @@ class FinanceProvider extends ChangeNotifier
 
   @override
   List<ReminderModel> allReminders = [];
+
+  CurrencyModel currentCurrency = CurrencyManager.defaultCurrencies[0];
 
   // =========================================
   // 🔍 FILTERED GETTERS (per-user)
@@ -135,9 +143,14 @@ class FinanceProvider extends ChangeNotifier
       await loadThemePreferences(); // ThemeMixin
       await loadPin();              // PinMixin
       await loadLockout();          // PinMixin
+      await loadNotificationPreferences(); // ReminderMixin
 
       // Load semua data bisnis
       await _loadAllData();
+      
+      // Load currency
+      currentCurrency = await CurrencyManager.loadActiveCurrency();
+      Formatters.activeCurrency = currentCurrency;
       
       // Sinkronisasi jadwal notifikasi ke OS
       checkAndScheduleNotifications();
@@ -155,6 +168,18 @@ class FinanceProvider extends ChangeNotifier
   // =========================================
   // 🔧 PRIVATE HELPERS
   // =========================================
+  
+  void updateCurrency(CurrencyModel newCurrency, double customRate) {
+    currentCurrency = CurrencyModel(
+      name: newCurrency.name,
+      code: newCurrency.code,
+      symbol: newCurrency.symbol,
+      exchangeRateToIdr: customRate,
+    );
+    Formatters.activeCurrency = currentCurrency;
+    CurrencyManager.saveActiveCurrency(currentCurrency);
+    notifyListeners();
+  }
 
   /// Memuat semua data bisnis dari penyimpanan lokal.
   Future<void> _loadAllData() async {
@@ -180,6 +205,10 @@ class FinanceProvider extends ChangeNotifier
     if (danaJson != null) allSumberDana = (danaJson as List).map((item) => WalletModel.fromJson(item)).toList();
     if (txJson != null) allTransaksi = (txJson as List).map((item) => TransactionModel.fromJson(item)).toList();
     if (kategoriJson != null) allKategori = (kategoriJson as List).map((item) => CategoryModel.fromJson(item)).toList();
+    
+    // Inisialisasi kategori default jika masih kosong (dari CategoryMixin)
+    initDefaultCategories();
+
     if (budgetJson != null) allBudgets = (budgetJson as List).map((item) => BudgetModel.fromJson(item)).toList();
     if (savingsJson != null) allSavings = (savingsJson as List).map((item) => SavingGoalModel.fromJson(item)).toList();
     if (debtsJson != null) allDebts = (debtsJson as List).map((item) => DebtModel.fromJson(item)).toList();

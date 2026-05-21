@@ -1,15 +1,12 @@
 // lib/core/utils/formatters.dart
 import 'package:intl/intl.dart';
+import 'package:aplikasi_keuangan/models/currency_model.dart';
 
 class Formatters {
   // ==========================================
-  // 1. DATA KONSTANTA
+  // 1. DATA KONSTANTA & STATE
   // ==========================================
-  static const Map<String, double> kurs = {
-    'IDR': 1.0,
-    'USD': 16200.0,
-    'EUR': 17500.0,
-  };
+  static CurrencyModel activeCurrency = CurrencyModel(name: 'Indonesian Rupiah', code: 'IDR', symbol: 'Rp', exchangeRateToIdr: 1.0);
 
   static const List<String> monthNames = [
     'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -20,33 +17,33 @@ class Formatters {
   // 2. FUNGSI FORMAT UANG
   // ==========================================
   
-  static String formatCurrency(double number, {String currencyCode = 'IDR', bool isHidden = false}) {
-    if (isHidden) return 'Rp ••••••••';
-    if (number.isNaN || number.isInfinite) return 'Rp 0';
+  static String formatCurrency(double number, {bool isHidden = false}) {
+    if (isHidden) return '${activeCurrency.symbol} ••••••••';
+    if (number.isNaN || number.isInfinite) return '${activeCurrency.symbol} 0';
 
-    double convertedNumber = number / (kurs[currencyCode] ?? 1.0);
-    String locale = currencyCode == 'USD' ? 'en_US' : currencyCode == 'EUR' ? 'de_DE' : 'id_ID';
-    int fractionDigits = currencyCode == 'IDR' ? 0 : 2;
+    double convertedNumber = number / activeCurrency.exchangeRateToIdr;
+    String locale = activeCurrency.code == 'USD' ? 'en_US' : activeCurrency.code == 'EUR' ? 'de_DE' : 'id_ID';
+    int fractionDigits = activeCurrency.code == 'IDR' ? 0 : 2;
 
     final formatter = NumberFormat.currency(
       locale: locale,
-      name: currencyCode,
-      symbol: currencyCode == 'IDR' ? 'Rp ' : (currencyCode == 'USD' ? '\$ ' : '€ '),
+      name: activeCurrency.code,
+      symbol: '${activeCurrency.symbol} ',
       decimalDigits: fractionDigits,
     );
     
     return formatter.format(convertedNumber);
   }
 
-  static String formatUangCompact(double num, {String currencyCode = 'IDR'}) {
+  static String formatUangCompact(double num) {
     if (num.isNaN || num.isInfinite) return '0';
-    double converted = num / (kurs[currencyCode] ?? 1.0);
-    String locale = currencyCode == 'USD' ? 'en_US' : currencyCode == 'EUR' ? 'de_DE' : 'id_ID';
+    double converted = num / activeCurrency.exchangeRateToIdr;
+    String locale = activeCurrency.code == 'USD' ? 'en_US' : activeCurrency.code == 'EUR' ? 'de_DE' : 'id_ID';
 
     final formatter = NumberFormat.compactCurrency(
       locale: locale,
-      name: currencyCode,
-      symbol: currencyCode == 'IDR' ? 'Rp ' : (currencyCode == 'USD' ? '\$ ' : '€ '),
+      name: activeCurrency.code,
+      symbol: '${activeCurrency.symbol} ',
       decimalDigits: 1,
     );
     

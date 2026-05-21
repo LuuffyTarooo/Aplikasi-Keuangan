@@ -461,17 +461,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                   bool isIncome = tx.jenis == 'Pemasukan';
                                   bool isTransfer = tx.jenis == 'Transfer';
 
-                                  Color iconColor = Colors.redAccent;
-                                  Color iconBg = Colors.redAccent.withValues(alpha:0.1);
-                                  IconData iconData = Icons.call_made_rounded;
-                                  String prefix = '-';
+                                  final katModel = finance.getCategoryByName(tx.kategori);
 
-                                  if (isIncome) {
-                                    iconColor = Colors.greenAccent;
-                                    iconBg = Colors.greenAccent.withValues(alpha:0.1);
-                                    iconData = Icons.call_received_rounded;
-                                    prefix = '+';
-                                  } else if (isTransfer) {
+                                  Color iconColor = katModel.accentColor;
+                                  Color iconBg = katModel.bgColor;
+                                  IconData iconData = katModel.icon;
+                                  String prefix = isIncome ? '+' : '-';
+
+                                  if (isTransfer) {
                                     iconColor = finance.themeAccent;
                                     iconBg = finance.themeAccent.withValues(alpha:0.2);
                                     iconData = Icons.sync_alt_rounded;

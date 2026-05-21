@@ -25,6 +25,10 @@ class StorageKeys {
   // Key untuk Theme
   static const String isDarkMode = 'is_dark_mode';
   static const String themeAccentColor = 'theme_accent_color';
+
+  // Key untuk Settings
+  static const String isNotificationsEnabled = 'is_notifications_enabled';
+  static const String activeCurrency = 'active_currency';
 }
 
 class TransactionTypes {

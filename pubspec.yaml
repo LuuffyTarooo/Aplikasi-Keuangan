@@ -46,6 +46,9 @@ dependencies:
   share_plus: ^13.1.0
   flutter_local_notifications: ^21.0.0
   timezone: ^0.11.0
+  flutter_tabler_icons: ^1.43.0
+  home_widget: ^0.9.1
+  app_links: ^7.0.0
 
 dev_dependencies:
   flutter_test:

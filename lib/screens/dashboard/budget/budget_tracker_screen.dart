@@ -21,19 +21,6 @@ class _BudgetTrackerScreenState extends State<BudgetTrackerScreen> {
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
   ];
 
-  IconData _getCategoryIcon(String categoryName) {
-    final name = categoryName.toLowerCase();
-    if (name.contains('makan') || name.contains('minum') || name.contains('jajan') || name.contains('kopi')) return Icons.coffee_rounded;
-    if (name.contains('transport') || name.contains('bensin') || name.contains('ojek') || name.contains('mobil')) return Icons.directions_car_rounded;
-    if (name.contains('belanja') || name.contains('baju') || name.contains('skincare')) return Icons.shopping_bag_rounded;
-    if (name.contains('olahraga') || name.contains('gym')) return Icons.fitness_center_rounded;
-    if (name.contains('sehat') || name.contains('obat') || name.contains('dokter')) return Icons.local_hospital_rounded;
-    if (name.contains('hiburan') || name.contains('game') || name.contains('nonton')) return Icons.sports_esports_rounded;
-    if (name.contains('tagihan') || name.contains('listrik') || name.contains('air')) return Icons.electric_bolt_rounded;
-    if (name.contains('donasi') || name.contains('sedekah') || name.contains('amal')) return Icons.favorite_rounded;
-    return Icons.track_changes_rounded;
-  }
-
   @override
   Widget build(BuildContext context) {
     final finance = Provider.of<FinanceProvider>(context);
@@ -252,7 +239,10 @@ class _BudgetTrackerScreenState extends State<BudgetTrackerScreen> {
                               children: [
                                 Row(
                                   children: [
-                                    Container(width: 40, height: 40, decoration: BoxDecoration(color: progressColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12), border: Border.all(color: progressColor.withValues(alpha: 0.2))), child: Icon(_getCategoryIcon(category), color: progressColor, size: 20)),
+                                    Builder(builder: (context) {
+                                      final katModel = finance.getCategoryByName(category);
+                                      return Container(width: 40, height: 40, decoration: BoxDecoration(color: katModel.bgColor, borderRadius: BorderRadius.circular(12), border: Border.all(color: katModel.accentColor.withValues(alpha: 0.2))), child: Icon(katModel.icon, color: katModel.accentColor, size: 20));
+                                    }),
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Column(
@@ -379,12 +369,7 @@ class _BudgetTrackerScreenState extends State<BudgetTrackerScreen> {
   // 🚀 BOTTOM SHEET BUAT NAMBAHIN BUDGET KATEGORI
   // =========================================================================
   void _showCategoryBudgetSheet(BuildContext context, FinanceProvider finance, Map<String, double> currentLimits, String? editCategory) {
-    List<String> allCatNames = [
-      'Makan & Minuman', 'Transportasi', 'Belanja', 'Tagihan', 
-      'Rumah Tangga', 'Hiburan', 'Kesehatan', 'Pendidikan', 'Peliharaan'
-    ];
-    allCatNames.addAll(finance.myKategori.where((k) => k.jenis == 'Pengeluaran').map((k) => k.name));
-    allCatNames = allCatNames.toSet().toList(); 
+    List<String> allCatNames = finance.expenseCategories.map((k) => k.name).toList();
 
     if (editCategory == null) {
       allCatNames.removeWhere((cat) => currentLimits.containsKey(cat));
@@ -392,8 +377,6 @@ class _BudgetTrackerScreenState extends State<BudgetTrackerScreen> {
 
     String selectedCategory = editCategory ?? (allCatNames.isNotEmpty ? allCatNames.first : "");
     final controller = TextEditingController(text: editCategory != null ? currentLimits[editCategory]?.toInt().toString() : "");
-    final customCatController = TextEditingController();
-    bool isCustomCategory = false; 
 
     showModalBottomSheet(
       context: context,
@@ -428,71 +411,44 @@ class _BudgetTrackerScreenState extends State<BudgetTrackerScreen> {
                     
                     Wrap(
                       spacing: 8, runSpacing: 8,
-                      children: [
-                        ...allCatNames.map((cat) {
-                          final isSelected = selectedCategory == cat && !isCustomCategory;
-                          return GestureDetector(
-                            onTap: () {
-                              HapticFeedback.lightImpact();
-                              setSheetState(() { selectedCategory = cat; isCustomCategory = false; });
-                            },
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                              decoration: BoxDecoration(color: isSelected ? finance.themeAccent.withValues(alpha:0.15) : finance.themeCard, borderRadius: BorderRadius.circular(20), border: Border.all(color: isSelected ? finance.themeAccent : finance.themeBorder)),
-                              child: Text(cat, style: TextStyle(color: isSelected ? finance.themeAccent : finance.themeTextSub, fontWeight: FontWeight.bold, fontSize: 12)),
-                            ),
-                          );
-                        }),
-
-                        // 🟢 TOMBOL + KATEGORI CUSTOM
-                        GestureDetector(
+                      children: allCatNames.map((cat) {
+                        final katModel = finance.getCategoryByName(cat);
+                        final isSelected = selectedCategory == cat;
+                        return GestureDetector(
                           onTap: () {
                             HapticFeedback.lightImpact();
-                            setSheetState(() { isCustomCategory = true; selectedCategory = ""; });
+                            setSheetState(() { selectedCategory = cat; });
                           },
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 200),
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                            decoration: BoxDecoration(color: isCustomCategory ? finance.themeAccent.withValues(alpha:0.15) : Colors.transparent, borderRadius: BorderRadius.circular(20), border: Border.all(color: isCustomCategory ? finance.themeAccent : finance.themeBorder, style: BorderStyle.solid)),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: isSelected ? katModel.bgColor : finance.themeCard, 
+                              borderRadius: BorderRadius.circular(24), 
+                              border: Border.all(color: isSelected ? katModel.accentColor.withValues(alpha: 0.5) : finance.themeBorder)
+                            ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.add, size: 14, color: isCustomCategory ? finance.themeAccent : finance.themeTextSub),
-                                const SizedBox(width: 4),
-                                Text("Buat Custom", style: TextStyle(color: isCustomCategory ? finance.themeAccent : finance.themeTextSub, fontWeight: FontWeight.bold, fontSize: 12)),
-                              ],
-                            ),
+                                Icon(katModel.icon, size: 16, color: isSelected ? katModel.accentColor : finance.themeTextSub), 
+                                const SizedBox(width: 6), 
+                                Text(katModel.name, style: TextStyle(color: isSelected ? katModel.accentColor : finance.themeTextSub, fontSize: 12, fontWeight: FontWeight.bold))
+                              ]
+                            )
                           ),
-                        )
-                      ],
+                        );
+                      }).toList(),
                     ),
                     const SizedBox(height: 16),
-
-                    if (isCustomCategory) ...[
-                      TextField(
-                        controller: customCatController,
-                        autofocus: true,
-                        style: TextStyle(color: finance.themeText, fontSize: 14, fontWeight: FontWeight.w600),
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: finance.themeCard,
-                          hintText: "Ketik nama kategori baru...",
-                          hintStyle: TextStyle(color: finance.themeTextSub.withValues(alpha:0.5)),
-                          contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: finance.themeBorder)),
-                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: finance.themeBorder)),
-                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: finance.themeAccent)),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                    ],
                   ] else ...[
                     Text("KATEGORI", style: TextStyle(color: finance.themeTextSub, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        Icon(_getCategoryIcon(selectedCategory), color: finance.themeAccent, size: 24),
+                        Builder(builder: (context) {
+                          final katModel = finance.getCategoryByName(selectedCategory);
+                          return Icon(katModel.icon, color: katModel.accentColor, size: 24);
+                        }),
                         const SizedBox(width: 12),
                         Text(selectedCategory, style: TextStyle(color: finance.themeText, fontSize: 20, fontWeight: FontWeight.w900)),
                       ],
@@ -528,24 +484,12 @@ class _BudgetTrackerScreenState extends State<BudgetTrackerScreen> {
                   
                   GestureDetector(
                     onTap: () {
-                      String finalCat = isCustomCategory ? customCatController.text.trim() : selectedCategory;
-                      if (finalCat.isEmpty) return; 
+                      if (selectedCategory.isEmpty) return; 
 
                       final val = double.tryParse(controller.text) ?? 0;
 
-                      bool catExists = finance.allKategori.any((k) => k.name.toLowerCase() == finalCat.toLowerCase() && k.jenis == 'Pengeluaran');
-                      if (!catExists) {
-                        finance.allKategori.add(CategoryModel(
-                          id: 'k_${DateTime.now().millisecondsSinceEpoch}',
-                          name: finalCat,
-                          jenis: 'Pengeluaran',
-                          userId: finance.currentUser?.id ?? '',
-                        ));
-                        finance.switchUser(finance.currentUser!.id); 
-                      }
-
                       final newLimits = Map<String, double>.from(currentLimits);
-                      newLimits[finalCat] = val;
+                      newLimits[selectedCategory] = val;
                       finance.updateCategoryLimits(newLimits); 
                       Navigator.pop(context);
                     },

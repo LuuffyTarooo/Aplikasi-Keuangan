@@ -43,21 +43,35 @@ class NotificationService {
     }
   }
 
-  Future<void> requestPermissions() async {
+  Future<bool> requestPermissions() async {
     try {
-      await _flutterLocalNotificationsPlugin
-          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-          ?.requestNotificationsPermission();
-
-      await _flutterLocalNotificationsPlugin
-          .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()
-          ?.requestPermissions(
-            alert: true,
-            badge: true,
-            sound: true,
-          );
+      bool? isGranted = false;
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        isGranted = await _flutterLocalNotificationsPlugin
+            .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+            ?.requestNotificationsPermission();
+      } else if (defaultTargetPlatform == TargetPlatform.iOS) {
+        isGranted = await _flutterLocalNotificationsPlugin
+            .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()
+            ?.requestPermissions(
+              alert: true,
+              badge: true,
+              sound: true,
+            );
+      }
+      return isGranted ?? false;
     } catch (e) {
       debugPrint("⚠️ Failed to request notification permissions: $e");
+      return false;
+    }
+  }
+
+  Future<void> cancelAllNotifications() async {
+    try {
+      await _flutterLocalNotificationsPlugin.cancelAll();
+      debugPrint("🔔 Cancelled all notifications");
+    } catch (e) {
+      debugPrint("⚠️ Failed to cancel all notifications: $e");
     }
   }
 

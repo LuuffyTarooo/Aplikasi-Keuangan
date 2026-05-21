@@ -73,21 +73,19 @@ class _DetailContent extends StatelessWidget {
     final dompet = sumberDana.firstWhere((d) => d.idDana == transaction.idDana, orElse: () => sumberDana.first).namaAset;
 
     // 🟢 TEMA DINAMIS
-    Color glowColor = Colors.redAccent;
+    final katModel = finance.getCategoryByName(transaction.kategori);
+
+    Color glowColor = katModel.accentColor;
     Color textColor = finance.themeText; 
-    IconData iconData = Icons.arrow_upward_rounded;
+    IconData iconData = katModel.icon;
     String prefix = '-';
 
     if (isPemasukan) {
-      glowColor = Colors.greenAccent;
       textColor = Colors.greenAccent;
-      iconData = Icons.arrow_downward_rounded;
       prefix = '+';
     } else if (isTransfer) {
       glowColor = finance.themeAccent;
-      textColor = finance.themeText;
       iconData = Icons.sync_alt_rounded;
-      prefix = '-';
     }
 
     return Container(

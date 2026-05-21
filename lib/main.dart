@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart'; 
+import 'dart:async';
+import 'package:app_links/app_links.dart';
+import 'package:aplikasi_keuangan/shared/bottom_sheets/quick_transaction_sheet.dart';
 
 // 🚀 IMPORT UTILS & CONFIG
 import 'package:aplikasi_keuangan/providers/finance_provider.dart';
@@ -46,14 +49,61 @@ void main() async {
   );
 }
 
-class MyApp extends StatelessWidget {
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  late AppLinks _appLinks;
+  StreamSubscription<Uri>? _linkSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _initDeepLinks();
+  }
+
+  @override
+  void dispose() {
+    _linkSubscription?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _initDeepLinks() async {
+    _appLinks = AppLinks();
+    try {
+      final initialUri = await _appLinks.getInitialLink();
+      if (initialUri != null) _handleLink(initialUri);
+    } catch (e) {
+      debugPrint("DeepLink Error: $e");
+    }
+
+    _linkSubscription = _appLinks.uriLinkStream.listen((uri) {
+      _handleLink(uri);
+    });
+  }
+
+  void _handleLink(Uri uri) {
+    if (uri.scheme == 'duittracker' && uri.host == 'quick_add') {
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (navigatorKey.currentContext != null) {
+          QuickTransactionSheet.show(navigatorKey.currentContext!);
+        }
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Consumer<FinanceProvider>(
       builder: (context, finance, child) {
         return MaterialApp(
+          navigatorKey: navigatorKey,
           title: 'Duit Tracker',
           debugShowCheckedModeBanner: false,
           themeMode: finance.isDarkMode ? ThemeMode.dark : ThemeMode.light,

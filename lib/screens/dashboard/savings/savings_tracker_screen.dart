@@ -462,6 +462,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
                                   Expanded(
                                     child: CustomButton(
                                       text: "Tarik", icon: Icons.arrow_upward_rounded, variant: ButtonVariant.secondary,
+                                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
                                       onPressed: goal.current == 0 ? null : () => _openTransactionModal(goal, false, finance),
                                     ),
                                   ),
@@ -469,6 +470,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
                                   Expanded(
                                     child: CustomButton(
                                       text: "Nabung", icon: Icons.arrow_downward_rounded, variant: ButtonVariant.primary,
+                                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
                                       onPressed: isFull ? null : () => _openTransactionModal(goal, true, finance),
                                     ),
                                   ),

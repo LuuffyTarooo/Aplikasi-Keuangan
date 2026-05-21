@@ -11,7 +11,6 @@ import '../../models/category_model.dart';
 
 import '../../core/utils/formatters.dart';
 import '../../core/utils/wallet_helper.dart';
-import '../../core/utils/category_suggester.dart';
 
 class TransactionFormScreen extends StatefulWidget {
   final TransactionModel? initialData;
@@ -31,8 +30,6 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> with Sing
   String _idDanaTujuan = '';
   DateTime _tanggal = DateTime.now();
 
-  bool _hasManuallyChangedCategory = false; 
-
   String? _errorMsg;
   bool _isSuccess = false;
   bool _isSubmitting = false;
@@ -44,9 +41,6 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> with Sing
 
   late AnimationController _shakeController;
   late Animation<double> _shakeAnimation;
-
-  final List<String> _reqPengeluaran = ['Makan & Minuman', 'Transportasi', 'Belanja', 'Tagihan', 'Rumah Tangga', 'Hiburan', 'Kesehatan', 'Transfer Temen', 'Pendidikan', 'Peliharaan'];
-  final List<String> _reqPemasukan = ['Gaji', 'Bonus', 'Investasi', 'Hadiah', 'Upah'];
 
   @override
   void initState() {
@@ -235,127 +229,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> with Sing
     );
   }
 
-  void _showManageCategorySheet(BuildContext context, FinanceProvider finance) {
-    String newCatName = '';
-    String editingCatId = '';
-    String editCatName = '';
-    
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            final currentCategories = finance.myKategori.where((k) => k.jenis == _jenis).toList();
 
-            return Container(
-              height: MediaQuery.of(context).size.height * 0.7,
-              decoration: BoxDecoration(color: finance.themeBg, borderRadius: const BorderRadius.vertical(top: Radius.circular(32)), border: Border(top: BorderSide(color: finance.themeBorder))),
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text("Atur Kategori", style: TextStyle(color: finance.themeText, fontSize: 20, fontWeight: FontWeight.w900)),
-                        GestureDetector(
-                          onTap: () => Navigator.pop(context),
-                          child: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: finance.themeCard, shape: BoxShape.circle, border: Border.all(color: finance.themeBorder)), child: Icon(Icons.close_rounded, color: finance.themeTextSub, size: 20)),
-                        )
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                            decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(16), border: Border.all(color: finance.themeBorder)),
-                            child: TextField(
-                              onChanged: (val) => setModalState(() => newCatName = val),
-                              style: TextStyle(color: finance.themeText, fontSize: 14, fontWeight: FontWeight.bold),
-                              decoration: InputDecoration(border: InputBorder.none, hintText: "Kategori baru...", hintStyle: TextStyle(color: finance.themeTextSub)),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        GestureDetector(
-                          onTap: () {
-                            if (newCatName.trim().isNotEmpty) {
-                              final newCat = CategoryModel(id: 'k_${DateTime.now().millisecondsSinceEpoch}', name: newCatName.trim(), jenis: _jenis, userId: finance.currentUser?.id ?? '');
-                              finance.allKategori.add(newCat);
-                              finance.switchUser(finance.currentUser!.id); 
-                              setModalState(() => newCatName = '');
-                            }
-                          },
-                          child: Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: finance.themeAccent, borderRadius: BorderRadius.circular(16)), child: const Icon(Icons.add, color: Colors.white, size: 20)),
-                        )
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Expanded(
-                    child: ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      physics: const BouncingScrollPhysics(),
-                      itemCount: currentCategories.length,
-                      itemBuilder: (context, index) {
-                        final kat = currentCategories[index];
-                        final isEditing = editingCatId == kat.id;
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(16), border: Border.all(color: finance.themeBorder)),
-                          child: isEditing 
-                            ? Row(
-                                children: [
-                                  Expanded(child: TextField(autofocus: true, onChanged: (val) => setModalState(() => editCatName = val), controller: TextEditingController(text: editCatName)..selection = TextSelection.collapsed(offset: editCatName.length), style: TextStyle(color: finance.themeText, fontSize: 14, fontWeight: FontWeight.bold), decoration: const InputDecoration(border: InputBorder.none, isDense: true, contentPadding: EdgeInsets.zero))),
-                                  IconButton(
-                                    icon: const Icon(Icons.check_circle, color: Colors.greenAccent),
-                                    onPressed: () {
-                                      if (editCatName.trim().isNotEmpty) {
-                                        final idx = finance.allKategori.indexWhere((k) => k.id == kat.id);
-                                        if (idx != -1) {
-                                          finance.allKategori[idx] = CategoryModel(id: kat.id, name: editCatName.trim(), jenis: kat.jenis, userId: finance.currentUser?.id ?? '');
-                                          finance.switchUser(finance.currentUser!.id);
-                                        }
-                                      }
-                                      setModalState(() => editingCatId = '');
-                                    },
-                                  )
-                                ],
-                              )
-                            : Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(kat.name, style: TextStyle(color: finance.themeText, fontWeight: FontWeight.bold, fontSize: 14)),
-                                  Row(
-                                    children: [
-                                      IconButton(icon: Icon(Icons.edit_outlined, color: finance.themeTextSub, size: 18), onPressed: () => setModalState(() { editingCatId = kat.id; editCatName = kat.name; })),
-                                      IconButton(
-                                        icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 18),
-                                        onPressed: () { finance.allKategori.removeWhere((k) => k.id == kat.id); finance.switchUser(finance.currentUser!.id); setModalState(() {}); },
-                                      ),
-                                    ],
-                                  )
-                                ],
-                              ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-        );
-      }
-    );
-  }
 
   Future<void> _selectDate(BuildContext context, FinanceProvider finance) async {
     final DateTime? picked = await showDatePicker(context: context, initialDate: _tanggal, firstDate: DateTime(2000), lastDate: DateTime(2101),
@@ -409,14 +283,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> with Sing
   }
 
   List<CategoryModel> _getDisplayCategories(FinanceProvider finance) {
-    List<CategoryModel> cats = finance.myKategori.toList();
-    if (!cats.any((k) => k.jenis == 'Pengeluaran')) {
-      for (var c in _reqPengeluaran) { cats.add(CategoryModel(id: 'auto_$c', name: c, jenis: 'Pengeluaran', userId: finance.currentUser?.id ?? '')); }
-    }
-    if (!cats.any((k) => k.jenis == 'Pemasukan')) {
-      for (var c in _reqPemasukan) { cats.add(CategoryModel(id: 'auto_$c', name: c, jenis: 'Pemasukan', userId: finance.currentUser?.id ?? '')); }
-    }
-    return cats.where((k) => k.jenis == _jenis).toList();
+    return _jenis == 'Pengeluaran' ? finance.expenseCategories : finance.incomeCategories;
   }
 
   Widget _buildDropdownOverlay(bool isTujuan, FinanceProvider finance) {
@@ -566,7 +433,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> with Sing
                               final isActive = _jenis == tab;
                               return Expanded(
                                 child: GestureDetector(
-                                  onTap: () { HapticFeedback.lightImpact(); setState(() { _jenis = tab; _kategori = ''; _hasManuallyChangedCategory = false; }); },
+                                  onTap: () { HapticFeedback.lightImpact(); setState(() { _jenis = tab; _kategori = ''; }); },
                                   child: Container(padding: const EdgeInsets.symmetric(vertical: 14), decoration: BoxDecoration(color: isActive ? finance.themeAccent : Colors.transparent, borderRadius: BorderRadius.circular(30)), alignment: Alignment.center, child: Text(tab, style: TextStyle(color: isActive ? Colors.white : finance.themeTextSub, fontWeight: FontWeight.bold, fontSize: 13))),
                                 ),
                               );
@@ -589,7 +456,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> with Sing
                             crossAxisAlignment: CrossAxisAlignment.baseline,
                             textBaseline: TextBaseline.alphabetic,
                             children: [
-                              Text("Rp ", style: TextStyle(color: _nominal.isEmpty ? finance.themeTextSub.withValues(alpha:0.5) : finance.themeTextSub, fontSize: 32, fontWeight: FontWeight.bold)),
+                              Text("${Formatters.activeCurrency.symbol} ", style: TextStyle(color: _nominal.isEmpty ? finance.themeTextSub.withValues(alpha:0.5) : finance.themeTextSub, fontSize: 32, fontWeight: FontWeight.bold)),
                               Text(_nominal.isEmpty ? "0" : Formatters.formatRibuan(_nominal), style: TextStyle(color: _nominal.isEmpty ? finance.themeTextSub.withValues(alpha:0.5) : finance.themeText, fontSize: _nominal.length > 8 ? 48 : 64, fontWeight: FontWeight.w900, letterSpacing: -1)),
                             ],
                           ),
@@ -645,11 +512,6 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> with Sing
                                 child: TextField(
                                   onChanged: (val) {
                                     _keterangan = val;
-                                    if (!_hasManuallyChangedCategory && _jenis != 'Transfer') {
-                                      final autoKat = CategorySuggester.suggestCategory(val); 
-                                      if (autoKat != null && listKategori.any((k) => k.name == autoKat)) _kategori = autoKat;
-                                    }
-                                    setState(() {});
                                   },
                                   controller: TextEditingController(text: _keterangan)..selection = TextSelection.collapsed(offset: _keterangan.length),
                                   style: TextStyle(color: finance.themeText, fontSize: 14, fontWeight: FontWeight.w500),
@@ -663,18 +525,33 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> with Sing
                         if (_jenis != 'Transfer') ...[
                           const SizedBox(height: 20),
                           SizedBox(
-                            height: 44,
+                            height: 48,
                             child: ListView.builder(
                               padding: const EdgeInsets.symmetric(horizontal: 24),
                               scrollDirection: Axis.horizontal,
-                              itemCount: listKategori.length + 1, 
+                              itemCount: listKategori.isEmpty ? 1 : listKategori.length, 
                               itemBuilder: (context, index) {
-                                if (index == listKategori.length) return GestureDetector(onTap: () => _showManageCategorySheet(context, finance), child: Container(margin: const EdgeInsets.only(left: 4), padding: const EdgeInsets.symmetric(horizontal: 16), decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(24), border: Border.all(color: finance.themeBorder, style: BorderStyle.solid)), child: Row(children: [Icon(Icons.settings_outlined, size: 16, color: finance.themeTextSub), const SizedBox(width: 6), Text("Atur", style: TextStyle(color: finance.themeTextSub, fontSize: 12, fontWeight: FontWeight.bold))])));
-                                final kat = listKategori[index];
+                                final kat = listKategori.isEmpty ? finance.getCategoryByName('') : listKategori[index];
                                 final isSelected = _kategori == kat.name;
                                 return GestureDetector(
-                                  onTap: () { HapticFeedback.lightImpact(); setState(() { _kategori = kat.name; _hasManuallyChangedCategory = true; }); },
-                                  child: AnimatedContainer(duration: const Duration(milliseconds: 200), margin: const EdgeInsets.only(right: 10), padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12), decoration: BoxDecoration(color: isSelected ? finance.themeAccent.withValues(alpha:0.15) : finance.themeCard, borderRadius: BorderRadius.circular(24), border: Border.all(color: isSelected ? finance.themeAccent : finance.themeBorder)), child: Row(children: [Icon(Icons.local_offer_outlined, size: 16, color: isSelected ? finance.themeAccent : finance.themeTextSub), const SizedBox(width: 8), Text(kat.name, style: TextStyle(color: isSelected ? finance.themeText : finance.themeTextSub, fontSize: 13, fontWeight: FontWeight.bold))])),
+                                  onTap: () { HapticFeedback.lightImpact(); setState(() { _kategori = kat.name; }); },
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 200), 
+                                    margin: const EdgeInsets.only(right: 10), 
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10), 
+                                    decoration: BoxDecoration(
+                                      color: isSelected ? kat.bgColor : finance.themeCard, 
+                                      borderRadius: BorderRadius.circular(24), 
+                                      border: Border.all(color: isSelected ? kat.accentColor.withValues(alpha: 0.5) : finance.themeBorder)
+                                    ), 
+                                    child: Row(
+                                      children: [
+                                        Icon(kat.icon, size: 18, color: isSelected ? kat.accentColor : finance.themeTextSub), 
+                                        const SizedBox(width: 8), 
+                                        Text(kat.name, style: TextStyle(color: isSelected ? kat.accentColor : finance.themeTextSub, fontSize: 13, fontWeight: FontWeight.bold))
+                                      ]
+                                    )
+                                  ),
                                 );
                               },
                             ),

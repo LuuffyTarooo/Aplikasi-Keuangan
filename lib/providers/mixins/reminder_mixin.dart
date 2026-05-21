@@ -4,6 +4,8 @@ import 'package:aplikasi_keuangan/models/reminder_model.dart';
 import 'package:aplikasi_keuangan/models/user_model.dart';
 import 'package:aplikasi_keuangan/core/utils/formatters.dart';
 import 'package:aplikasi_keuangan/services/notification_service.dart';
+import 'package:aplikasi_keuangan/services/local_storage_service.dart';
+import 'package:aplikasi_keuangan/core/constants/app_constants.dart';
 
 /// Mixin untuk mengelola fitur pengingat tagihan/jadwal.
 mixin ReminderMixin on ChangeNotifier {
@@ -63,8 +65,55 @@ mixin ReminderMixin on ChangeNotifier {
     }
   }
 
+  bool _isNotificationEnabled = true;
+  bool get isNotificationEnabled => _isNotificationEnabled;
+
+  Future<void> loadNotificationPreferences() async {
+    try {
+      final val = await LocalStorageService.loadData(StorageKeys.isNotificationsEnabled);
+      if (val != null && val is bool) {
+        _isNotificationEnabled = val;
+      }
+      notifyListeners();
+    } catch (e) {
+      debugPrint('⚠️ Gagal load preferensi notifikasi: $e');
+    }
+  }
+
+  Future<void> toggleNotification(bool val) async {
+    try {
+      if (val) {
+        final hasPermission = await NotificationService().requestPermissions();
+        if (!hasPermission) {
+          _isNotificationEnabled = false;
+        } else {
+          _isNotificationEnabled = true;
+        }
+      } else {
+        _isNotificationEnabled = false;
+      }
+
+      await LocalStorageService.saveData(StorageKeys.isNotificationsEnabled, _isNotificationEnabled);
+
+      if (_isNotificationEnabled) {
+        await checkAndScheduleNotifications();
+      } else {
+        await NotificationService().cancelAllNotifications();
+        for (var r in allReminders) {
+          r.lastNotifiedPhase = null;
+        }
+        syncToStorage();
+      }
+      notifyListeners();
+    } catch (e) {
+      debugPrint('⚠️ Gagal toggle notifikasi: $e');
+    }
+  }
+
   /// Mengecek seluruh rutinitas dan mendaftarkan jadwal ke OS menggunakan NotificationService.
   Future<void> checkAndScheduleNotifications() async {
+    if (!_isNotificationEnabled) return;
+
     bool hasChanges = false;
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
