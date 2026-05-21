@@ -59,7 +59,6 @@ class _QuickTransactionContentState extends State<_QuickTransactionContent> {
     if (inputNominal <= 0) return;
 
     if (_idDana == null) return;
-
     if (_jenis != 'Transfer' && _selectedKategori == null) return;
 
     setState(() => _isSubmitting = true);
@@ -76,14 +75,17 @@ class _QuickTransactionContentState extends State<_QuickTransactionContent> {
       userId: finance.currentUser?.id ?? '',
     );
 
+    // Using the existing handleSaveTransaksi method which maps to addTransaction logic
     finance.handleSaveTransaksi(newTx);
 
     AudioHelper.playSuccessSound();
     HapticHelper.success();
 
-    await Future.delayed(const Duration(milliseconds: 600));
+    await Future.delayed(const Duration(milliseconds: 300));
     
-    SystemNavigator.pop();
+    if (mounted) {
+      Navigator.pop(context);
+    }
   }
 
   List<CategoryModel> _getDisplayCategories(FinanceProvider finance) {
@@ -95,7 +97,6 @@ class _QuickTransactionContentState extends State<_QuickTransactionContent> {
     final finance = Provider.of<FinanceProvider>(context);
     final categories = _getDisplayCategories(finance);
     
-    // Auto select category if empty
     if (_selectedKategori == null && categories.isNotEmpty && _jenis != 'Transfer') {
       _selectedKategori = categories.first;
     } else if (_jenis != 'Transfer' && categories.isNotEmpty && !categories.contains(_selectedKategori)) {
@@ -127,70 +128,96 @@ class _QuickTransactionContentState extends State<_QuickTransactionContent> {
                   decoration: BoxDecoration(color: finance.themeBorder, borderRadius: BorderRadius.circular(2)),
                 ),
               ),
-              Text("Input Cepat ⚡", style: TextStyle(color: finance.themeText, fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
+              Text("Input Cepat ⚡", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: -0.5)),
               const SizedBox(height: 24),
 
-              // Section 1: Tipe Transaksi
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(20), border: Border.all(color: finance.themeBorder)),
-                child: Row(
-                  children: ['Pengeluaran', 'Pemasukan'].map((tab) {
-                    final isActive = _jenis == tab;
-                    return Expanded(
-                      child: GestureDetector(
-                        onTap: () { HapticFeedback.lightImpact(); setState(() { _jenis = tab; _selectedKategori = null; }); },
-                        child: Container(padding: const EdgeInsets.symmetric(vertical: 12), decoration: BoxDecoration(color: isActive ? finance.themeAccent : Colors.transparent, borderRadius: BorderRadius.circular(16)), alignment: Alignment.center, child: Text(tab, style: TextStyle(color: isActive ? Colors.white : finance.themeTextSub, fontWeight: FontWeight.bold, fontSize: 13))),
-                      ),
-                    );
-                  }).toList(),
+              // Section 1: Tipe Transaksi (SegmentedButton)
+              SizedBox(
+                width: double.infinity,
+                child: SegmentedButton<String>(
+                  segments: const [
+                    ButtonSegment(value: 'Pengeluaran', label: Text('Pengeluaran')),
+                    ButtonSegment(value: 'Pemasukan', label: Text('Pemasukan')),
+                    ButtonSegment(value: 'Transfer', label: Text('Transfer')),
+                  ],
+                  selected: {_jenis},
+                  onSelectionChanged: (Set<String> newSelection) {
+                    HapticFeedback.lightImpact();
+                    setState(() {
+                      _jenis = newSelection.first;
+                      _selectedKategori = null;
+                    });
+                  },
+                  style: ButtonStyle(
+                    backgroundColor: WidgetStateProperty.resolveWith<Color>(
+                      (Set<WidgetState> states) {
+                        if (states.contains(WidgetState.selected)) {
+                          return finance.themeAccent;
+                        }
+                        return finance.themeCard;
+                      },
+                    ),
+                    foregroundColor: WidgetStateProperty.resolveWith<Color>(
+                      (Set<WidgetState> states) {
+                        if (states.contains(WidgetState.selected)) {
+                          return Colors.black;
+                        }
+                        return finance.themeTextSub;
+                      },
+                    ),
+                  ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
 
-              // Section 2: Kategori (Pill Selector)
+              // Section 2: Kategori (Wrap dengan Chip)
               if (_jenis != 'Transfer') ...[
                 Text("KATEGORI", style: TextStyle(color: finance.themeTextSub, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
                 const SizedBox(height: 12),
-                SizedBox(
-                  height: 44,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: categories.length,
-                    itemBuilder: (context, index) {
-                      final kat = categories[index];
-                      final isSelected = _selectedKategori?.name == kat.name;
-                      return GestureDetector(
-                        onTap: () { HapticFeedback.lightImpact(); setState(() => _selectedKategori = kat); },
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          margin: const EdgeInsets.only(right: 8),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: isSelected ? kat.bgColor : finance.themeCard,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: isSelected ? kat.accentColor.withValues(alpha: 0.5) : finance.themeBorder)
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(kat.icon, size: 16, color: isSelected ? kat.accentColor : finance.themeTextSub),
-                              const SizedBox(width: 8),
-                              Text(kat.name, style: TextStyle(color: isSelected ? kat.accentColor : finance.themeTextSub, fontSize: 12, fontWeight: FontWeight.bold))
-                            ]
-                          )
-                        ),
-                      );
-                    },
-                  ),
+                Wrap(
+                  spacing: 8.0,
+                  runSpacing: 8.0,
+                  children: categories.map((kat) {
+                    final isSelected = _selectedKategori?.name == kat.name;
+                    return ChoiceChip(
+                      label: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(kat.icon, size: 16, color: isSelected ? kat.accentColor : finance.themeTextSub),
+                          const SizedBox(width: 6),
+                          Text(kat.name),
+                        ],
+                      ),
+                      selected: isSelected,
+                      onSelected: (bool selected) {
+                        if (selected) {
+                          HapticFeedback.lightImpact();
+                          setState(() => _selectedKategori = kat);
+                        }
+                      },
+                      selectedColor: kat.bgColor,
+                      backgroundColor: finance.themeCard,
+                      labelStyle: TextStyle(
+                        color: isSelected ? kat.accentColor : finance.themeTextSub,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: BorderSide(color: isSelected ? kat.accentColor.withOpacity(0.5) : finance.themeBorder),
+                      ),
+                      showCheckmark: false,
+                    );
+                  }).toList(),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
               ],
 
-              // Section 3: Dompet
+              // Section 3: Dompet (ListView Horizontal)
               Text("DOMPET SUMBER", style: TextStyle(color: finance.themeTextSub, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
               const SizedBox(height: 12),
               SizedBox(
-                height: 52,
+                height: 60,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   itemCount: finance.mySumberDana.length,
@@ -199,25 +226,24 @@ class _QuickTransactionContentState extends State<_QuickTransactionContent> {
                     final isSelected = _idDana == d.idDana;
                     return GestureDetector(
                       onTap: () { HapticFeedback.lightImpact(); setState(() => _idDana = d.idDana); },
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
+                      child: Container(
                         margin: const EdgeInsets.only(right: 12),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(
-                          color: isSelected ? finance.themeAccent.withValues(alpha: 0.1) : finance.themeCard,
+                          color: isSelected ? finance.themeAccent.withOpacity(0.1) : finance.themeCard,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(color: isSelected ? finance.themeAccent : finance.themeBorder)
                         ),
                         child: Row(
                           children: [
                             WalletHelper.getWalletLogo(d.namaAset, size: 'sm'),
-                            const SizedBox(width: 10),
+                            const SizedBox(width: 12),
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Text(d.namaAset, style: TextStyle(color: isSelected ? finance.themeAccent : finance.themeText, fontSize: 12, fontWeight: FontWeight.w900)),
-                                Text(Formatters.formatCurrency(d.saldoTerkini), style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.bold)),
+                                Text(d.namaAset, style: TextStyle(color: isSelected ? finance.themeAccent : finance.themeText, fontSize: 13, fontWeight: FontWeight.bold)),
+                                Text(Formatters.formatCurrency(d.saldoTerkini), style: TextStyle(color: finance.themeTextSub, fontSize: 11, fontWeight: FontWeight.bold)),
                               ],
                             )
                           ]
@@ -229,43 +255,44 @@ class _QuickTransactionContentState extends State<_QuickTransactionContent> {
               ),
               const SizedBox(height: 24),
 
-              // Section 4: Nominal
-              TextField(
+              // Section 4: Nominal (TextFormField)
+              TextFormField(
                 controller: _nominalController,
                 autofocus: true,
                 keyboardType: TextInputType.number,
-                style: TextStyle(color: finance.themeText, fontSize: 32, fontWeight: FontWeight.w900),
+                style: TextStyle(color: finance.themeText, fontSize: 32, fontWeight: FontWeight.bold),
+                inputFormatters: [CurrencyInputFormatter()],
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: finance.themeCard,
                   prefixIconConstraints: const BoxConstraints(minWidth: 60),
                   prefixIcon: Center(
                     widthFactor: 1.0,
-                    child: Text("${Formatters.activeCurrency.symbol} ", style: TextStyle(color: finance.themeTextSub, fontSize: 20, fontWeight: FontWeight.bold)),
+                    child: Text("${Formatters.activeCurrency.symbol} ", style: TextStyle(color: finance.themeTextSub, fontSize: 24, fontWeight: FontWeight.bold)),
                   ),
                   hintText: "0",
-                  hintStyle: TextStyle(color: finance.themeTextSub.withValues(alpha: 0.5)),
+                  hintStyle: TextStyle(color: finance.themeTextSub.withOpacity(0.5)),
                   contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide(color: finance.themeBorder)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide(color: finance.themeBorder)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide(color: finance.themeAccent, width: 2)),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
                 ),
                 onChanged: (val) {
-                  setState(() {}); // Trigger rebuild for button state
+                  setState(() {});
                 },
               ),
               const SizedBox(height: 16),
 
-              // Section 5: Catatan
-              TextField(
+              // Section 5: Catatan (TextFormField multi-line)
+              TextFormField(
                 controller: _catatanController,
+                maxLines: 3,
+                minLines: 1,
                 style: TextStyle(color: finance.themeText, fontSize: 14),
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: finance.themeCard,
                   prefixIcon: Icon(Icons.notes_rounded, color: finance.themeTextSub, size: 20),
                   hintText: "Catatan opsional...",
-                  hintStyle: TextStyle(color: finance.themeTextSub.withValues(alpha: 0.5)),
+                  hintStyle: TextStyle(color: finance.themeTextSub.withOpacity(0.5)),
                   contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
                 ),
@@ -277,37 +304,38 @@ class _QuickTransactionContentState extends State<_QuickTransactionContent> {
                 children: [
                   Expanded(
                     flex: 1,
-                    child: GestureDetector(
-                      onTap: () {
+                    child: ElevatedButton(
+                      onPressed: () {
                         HapticFeedback.lightImpact();
-                        SystemNavigator.pop();
+                        Navigator.pop(context);
                       },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 18),
-                        decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(20), border: Border.all(color: finance.themeBorder)),
-                        alignment: Alignment.center,
-                        child: Text("Batal", style: TextStyle(color: finance.themeTextSub, fontSize: 14, fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: finance.themeTextSub.withOpacity(0.2),
+                        foregroundColor: finance.themeTextSub,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        elevation: 0,
                       ),
+                      child: const Text("Batalkan", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     flex: 2,
-                    child: GestureDetector(
-                      onTap: isReady ? () => _handleSubmit(finance) : null,
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        padding: const EdgeInsets.symmetric(vertical: 18),
-                        decoration: BoxDecoration(
-                          color: isReady ? finance.themeAccent : finance.themeCard, 
-                          borderRadius: BorderRadius.circular(20), 
-                          border: Border.all(color: isReady ? finance.themeAccent : finance.themeBorder)
-                        ),
-                        alignment: Alignment.center,
-                        child: _isSubmitting 
-                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                          : Text("Selesai & Tutup", style: TextStyle(color: isReady ? Colors.white : finance.themeTextSub, fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+                    child: ElevatedButton(
+                      onPressed: isReady ? () => _handleSubmit(finance) : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: finance.themeAccent,
+                        foregroundColor: Colors.black, // Dark text on yellow background
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        elevation: 0,
+                        disabledBackgroundColor: finance.themeCard,
+                        disabledForegroundColor: finance.themeTextSub,
                       ),
+                      child: _isSubmitting 
+                        ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
+                        : const Text("Selesai", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ],

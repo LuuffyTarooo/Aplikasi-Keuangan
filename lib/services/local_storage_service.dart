@@ -46,4 +46,14 @@ class LocalStorageService {
       debugPrint('❌ Error hapus data $key: $error'); // 🟢 Ganti print jadi debugPrint
     }
   }
+
+  // 4. Fungsi buat memaksa membaca ulang dari file fisik (Berguna untuk sinkronisasi antar mesin/Widget)
+  static Future<void> forceReload() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.reload();
+    } catch (error) {
+      debugPrint('❌ Error force reload SharedPreferences: $error');
+    }
+  }
 }

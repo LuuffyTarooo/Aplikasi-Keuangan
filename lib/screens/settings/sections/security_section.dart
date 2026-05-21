@@ -91,6 +91,14 @@ class _SecuritySectionState extends State<SecuritySection> {
 
   Future<void> _toggleFaceId() async {
     HapticFeedback.lightImpact();
+    
+    // Cegah aktifin kalau PIN belum ada
+    final bool isPinActive = widget.appPin != null && widget.appPin!.isNotEmpty;
+    if (!isPinActive) {
+      _showPinRequiredFeedback();
+      return;
+    }
+
     final prefs = await SharedPreferences.getInstance();
     final newVal = !_useFaceId;
     
@@ -99,10 +107,21 @@ class _SecuritySectionState extends State<SecuritySection> {
     });
     await prefs.setBool('setting_useFaceId', newVal);
     widget.setUseBiometric(newVal || _useFingerprint);
+    
+    // Beri tahu provider
+    if (mounted) Provider.of<FinanceProvider>(context, listen: false).updateBiometricState();
   }
 
   Future<void> _toggleFingerprint() async {
     HapticFeedback.lightImpact();
+    
+    // Cegah aktifin kalau PIN belum ada
+    final bool isPinActive = widget.appPin != null && widget.appPin!.isNotEmpty;
+    if (!isPinActive) {
+      _showPinRequiredFeedback();
+      return;
+    }
+
     final prefs = await SharedPreferences.getInstance();
     final newVal = !_useFingerprint;
 
@@ -111,6 +130,21 @@ class _SecuritySectionState extends State<SecuritySection> {
     });
     await prefs.setBool('setting_useFingerprint', newVal);
     widget.setUseBiometric(_useFaceId || newVal);
+    
+    // Beri tahu provider
+    if (mounted) Provider.of<FinanceProvider>(context, listen: false).updateBiometricState();
+  }
+
+  void _showPinRequiredFeedback() {
+    final finance = Provider.of<FinanceProvider>(context, listen: false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Aktifkan PIN terlebih dahulu untuk menggunakan biometrik!", style: TextStyle(color: finance.themeText, fontWeight: FontWeight.bold)),
+        backgroundColor: finance.themeCard,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: finance.themeBorder)),
+      ),
+    );
   }
 
   @override

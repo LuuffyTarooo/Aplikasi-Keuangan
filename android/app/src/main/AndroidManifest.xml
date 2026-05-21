@@ -39,6 +39,18 @@
             android:name="flutterEmbedding"
             android:value="2" />
             
+        <activity
+            android:name=".QuickAddActivity"
+            android:exported="true"
+            android:theme="@style/TransparentTheme"
+            android:taskAffinity=""
+            android:excludeFromRecents="true"
+            android:launchMode="singleInstance">
+            <meta-data
+                android:name="io.flutter.Entrypoint"
+                android:value="quickAddMain" />
+        </activity>
+            
         <receiver android:name=".QuickAddWidgetProvider" android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />

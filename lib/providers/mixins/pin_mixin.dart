@@ -7,18 +7,39 @@ import 'package:shared_preferences/shared_preferences.dart';
 mixin PinMixin on ChangeNotifier {
   String _userPin = '';
   int _pinLockoutUntil = 0;
+  bool _isBiometricEnabled = false;
 
   String get userPin => _userPin;
   int get pinLockoutUntil => _pinLockoutUntil;
+  bool get isBiometricEnabled => _isBiometricEnabled;
 
-  /// Memuat PIN dari penyimpanan lokal.
+  /// Memuat PIN dan status Biometrik dari penyimpanan lokal.
   Future<void> loadPin() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       _userPin = prefs.getString(StorageKeys.userPin) ?? '';
+      
+      bool useFace = prefs.getBool('setting_useFaceId') ?? false;
+      bool useFinger = prefs.getBool('setting_useFingerprint') ?? false;
+      _isBiometricEnabled = (useFace || useFinger) && _userPin.isNotEmpty;
+
+      // Paksa matikan biometrik di storage jika PIN kosong
+      if (_userPin.isEmpty && (useFace || useFinger)) {
+        await prefs.setBool('setting_useFaceId', false);
+        await prefs.setBool('setting_useFingerprint', false);
+      }
     } catch (e) {
       debugPrint('⚠️ Gagal memuat PIN: $e');
     }
+  }
+
+  /// Memperbarui status biometrik secara manual dari layar Setting
+  Future<void> updateBiometricState() async {
+    final prefs = await SharedPreferences.getInstance();
+    bool useFace = prefs.getBool('setting_useFaceId') ?? false;
+    bool useFinger = prefs.getBool('setting_useFingerprint') ?? false;
+    _isBiometricEnabled = (useFace || useFinger) && _userPin.isNotEmpty;
+    notifyListeners();
   }
 
   /// Memperbarui PIN pengguna. Kirim `null` untuk menonaktifkan PIN.

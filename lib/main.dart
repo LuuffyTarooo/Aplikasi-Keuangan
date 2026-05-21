@@ -6,6 +6,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'dart:async';
 import 'package:app_links/app_links.dart';
 import 'package:aplikasi_keuangan/shared/bottom_sheets/quick_transaction_sheet.dart';
+import 'package:aplikasi_keuangan/shared/bottom_sheets/quick_add_wizard_screen.dart';
 
 // 🚀 IMPORT UTILS & CONFIG
 import 'package:aplikasi_keuangan/providers/finance_provider.dart';
@@ -32,12 +33,18 @@ import 'package:aplikasi_keuangan/screens/dashboard/savings/savings_tracker_scre
 import 'package:aplikasi_keuangan/screens/dashboard/voice_assistant_screen.dart';
 import 'package:aplikasi_keuangan/screens/dashboard/wallets/manage_wallets_screen.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('id_ID', null); 
   
-  await NotificationService().init();
-  await NotificationService().requestPermissions();
+  // 🚀 Pre-warm SharedPreferences agar isSecurityMounted jadi 0 milidetik
+  await SharedPreferences.getInstance();
+
+  // 🚀 Jangan di-await agar tidak memblokir startup screen!
+  NotificationService().init();
+  NotificationService().requestPermissions();
   
   runApp(
     MultiProvider(
@@ -134,8 +141,29 @@ class MainAppShell extends StatefulWidget {
   State<MainAppShell> createState() => _MainAppShellState();
 }
 
-class _MainAppShellState extends State<MainAppShell> {
+class _MainAppShellState extends State<MainAppShell> with WidgetsBindingObserver {
   int _currentScreenIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // 🚀 Reload data dari memori saat user balik dari Widget / Background
+      final finance = Provider.of<FinanceProvider>(context, listen: false);
+      finance.reloadDataFromStorage();
+    }
+  }
 
   void _handleNavigation(dynamic destination) {
     HapticFeedback.lightImpact();
@@ -182,6 +210,43 @@ class _MainAppShellState extends State<MainAppShell> {
       },
       onVoiceAdd: () => VoiceAssistantSheet.show(context),
       child: currentScreen,
+    );
+  }
+}
+
+// ==========================================
+// 🚀 SECONDARY ENTRYPOINT UNTUK OVERLAY WIDGET
+// ==========================================
+@pragma('vm:entry-point')
+void quickAddMain() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('id_ID', null); 
+  
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => FinanceProvider()..initData()),
+      ],
+      child: const QuickAddOverlayApp(),
+    ),
+  );
+}
+
+class QuickAddOverlayApp extends StatelessWidget {
+  const QuickAddOverlayApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<FinanceProvider>(
+      builder: (context, finance, child) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          themeMode: finance.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+          theme: ThemeData.light().copyWith(scaffoldBackgroundColor: Colors.transparent),
+          darkTheme: AppTheme.darkTheme.copyWith(scaffoldBackgroundColor: Colors.transparent),
+          home: const QuickAddWizardScreen(),
+        );
+      }
     );
   }
 }

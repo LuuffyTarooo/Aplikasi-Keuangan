@@ -51,6 +51,7 @@ class FinanceProvider extends ChangeNotifier
   // =========================================
   // 📦 STATE FIELDS
   // =========================================
+  bool isSecurityMounted = false;
   bool isDataMounted = false;
 
   @override
@@ -139,29 +140,44 @@ class FinanceProvider extends ChangeNotifier
   /// Dipanggil sekali saat app startup via `FinanceProvider()..initData()`.
   Future<void> initData() async {
     try {
-      // Load preferensi (dari mixin)
+      // 1. Load preferensi security & UI tercepat (Kurang dari 50ms)
       await loadThemePreferences(); // ThemeMixin
       await loadPin();              // PinMixin
       await loadLockout();          // PinMixin
-      await loadNotificationPreferences(); // ReminderMixin
+      
+      // Kasih tau UI kalau layar PIN udah bisa digambar tanpa nunggu SQLite selesai!
+      isSecurityMounted = true;
+      notifyListeners();
 
-      // Load semua data bisnis
+      // 2. Load data berat di background
+      await loadNotificationPreferences(); // ReminderMixin
       await _loadAllData();
       
-      // Load currency
       currentCurrency = await CurrencyManager.loadActiveCurrency();
       Formatters.activeCurrency = currentCurrency;
       
-      // Sinkronisasi jadwal notifikasi ke OS
       checkAndScheduleNotifications();
 
       isDataMounted = true;
       notifyListeners();
     } catch (e) {
       debugPrint('❌ initData gagal: $e');
-      // Tetap set mounted agar app tidak stuck di loading
+      isSecurityMounted = true;
       isDataMounted = true;
       notifyListeners();
+    }
+  }
+
+  /// Memuat ulang data transaksi & dompet dari storage (dipanggil saat app resume dari background)
+  Future<void> reloadDataFromStorage() async {
+    try {
+      // Wajib forceReload agar SharedPreferences mengambil data dari disk fisik,
+      // karena Widget berjalan di memori (mesin) yang berbeda.
+      await LocalStorageService.forceReload();
+      await _loadAllData();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('❌ reloadDataFromStorage gagal: $e');
     }
   }
 

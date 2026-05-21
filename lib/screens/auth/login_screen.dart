@@ -23,17 +23,9 @@ class _LockScreenState extends State<LockScreen> {
   String _timeLeft = '24:00:00';
   Timer? _countdownTimer;
 
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkInitialSecurityState();
-    });
-  }
+  bool _hasCheckedInitialState = false;
 
-  void _checkInitialSecurityState() {
-    final finance = Provider.of<FinanceProvider>(context, listen: false);
-    
+  void _checkInitialSecurityState(FinanceProvider finance) {
     int now = DateTime.now().millisecondsSinceEpoch;
     
     // 1. Cek apakah lagi dalam masa hukuman countdown 24 jam
@@ -55,8 +47,10 @@ class _LockScreenState extends State<LockScreen> {
       return;
     }
 
-    // 4. Kalau semua aman dan PIN ada, panggil Face ID / Sidik Jari
-    _authenticateBiometric();
+    // 4. Kalau semua aman dan PIN ada, panggil Face ID / Sidik Jari JIKA DIAKTIFKAN
+    if (finance.isBiometricEnabled) {
+      _authenticateBiometric();
+    }
   }
 
   // Timer detak detik buat ngitung mundur 24 jam secara realtime di UI
@@ -186,12 +180,31 @@ class _LockScreenState extends State<LockScreen> {
   @override
   Widget build(BuildContext context) {
     final finance = Provider.of<FinanceProvider>(context);
+    
+    // Tunggu data keamanan (PIN/Theme) selesai dimuat (Sangat cepat < 50ms)
+    if (!finance.isSecurityMounted) {
+      return Scaffold(backgroundColor: finance.themeBg);
+    }
+
     int now = DateTime.now().millisecondsSinceEpoch;
     bool isLockoutActive = finance.pinLockoutUntil > 0 && now < finance.pinLockoutUntil;
 
     // Pas app kebuka dan PIN emang kosong, kasih container kosong biar transisi ke dashboard bersih
     if (finance.userPin.isEmpty && !isLockoutActive) {
+      if (!_hasCheckedInitialState) {
+        _hasCheckedInitialState = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _checkInitialSecurityState(finance);
+        });
+      }
       return Scaffold(backgroundColor: finance.themeBg);
+    }
+
+    if (!_hasCheckedInitialState) {
+      _hasCheckedInitialState = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _checkInitialSecurityState(finance);
+      });
     }
 
     return Scaffold(
@@ -271,11 +284,16 @@ class _LockScreenState extends State<LockScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        GestureDetector(
-                          onTap: _authenticateBiometric,
-                          child: Container(width: 70, height: 70, alignment: Alignment.center, child: Icon(Icons.fingerprint_rounded, color: finance.themeAccent, size: 32)),
-                        ),
+                        if (finance.isBiometricEnabled)
+                          GestureDetector(
+                            onTap: _authenticateBiometric,
+                            child: Container(width: 70, height: 70, alignment: Alignment.center, child: Icon(Icons.fingerprint_rounded, color: finance.themeAccent, size: 32)),
+                          )
+                        else
+                          const SizedBox(width: 70, height: 70), // Spacer kosong
+                        
                         _buildNumBtn('0', finance),
+                        
                         GestureDetector(
                           onTap: _onDeletePressed,
                           child: Container(width: 70, height: 70, alignment: Alignment.center, child: Icon(Icons.backspace_outlined, color: finance.themeTextSub, size: 28)),

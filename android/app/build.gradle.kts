@@ -11,6 +11,7 @@ android {
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -41,4 +42,16 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+}
+
+configurations.all {
+    resolutionStrategy {
+        force("androidx.glance:glance-appwidget:1.1.0")
+        force("androidx.glance:glance:1.1.0")
+        force("androidx.compose.remote:remote-creation-android:1.0.0-beta01")
+    }
 }

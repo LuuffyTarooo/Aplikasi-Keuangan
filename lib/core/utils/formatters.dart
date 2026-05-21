@@ -1,5 +1,6 @@
 // lib/core/utils/formatters.dart
 import 'package:intl/intl.dart';
+import 'package:flutter/services.dart';
 import 'package:aplikasi_keuangan/models/currency_model.dart';
 
 class Formatters {
@@ -70,5 +71,29 @@ class Formatters {
     due = DateTime(due.year, due.month, due.day);
     
     return due.difference(today).inDays;
+  }
+}
+
+class CurrencyInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    if (newValue.text.isEmpty) {
+      return newValue.copyWith(text: '');
+    }
+
+    // Keep only numbers
+    String newText = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
+    
+    if (newText.isEmpty) {
+      return newValue.copyWith(text: '');
+    }
+
+    int value = int.parse(newText);
+    String formatted = NumberFormat('#,###', 'id_ID').format(value);
+
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
   }
 }
