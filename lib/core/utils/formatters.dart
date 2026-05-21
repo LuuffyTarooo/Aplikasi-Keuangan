@@ -1,10 +1,9 @@
 // lib/core/utils/formatters.dart
-import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 class Formatters {
   // ==========================================
-  // 1. DATA KONSTANTA & TEMA WARNA
+  // 1. DATA KONSTANTA
   // ==========================================
   static const Map<String, double> kurs = {
     'IDR': 1.0,
@@ -15,16 +14,6 @@ class Formatters {
   static const List<String> monthNames = [
     'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-  ];
-
-  // Palet Warna Neon untuk Grafik (Chart)
-  static const List<Color> neonColors = [
-    Color(0xFFA855F7), // Purple
-    Color(0xFFD946EF), // Fuchsia
-    Color(0xFF8B5CF6), // Violet
-    Color(0xFFC084FC), // Light Purple
-    Color(0xFFE879F9), // Light Fuchsia
-    Color(0xFFA78BFA), // Light Violet
   ];
 
   // ==========================================

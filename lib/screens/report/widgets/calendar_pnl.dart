@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'package:aplikasi_keuangan/providers/finance_provider.dart';
+import 'package:aplikasi_keuangan/providers/mixins/report_mixin.dart';
 import 'package:aplikasi_keuangan/models/transaction_model.dart';
 import 'package:aplikasi_keuangan/core/utils/formatters.dart';
 import 'package:aplikasi_keuangan/screens/report/widgets/history_section.dart';
@@ -56,54 +57,26 @@ class _CalendarPnlSectionState extends State<CalendarPnlSection> {
     final year = widget.currentDate.year;
     final month = widget.currentDate.month;
 
-    final currentMonthTxs = widget.transaksi.where((t) {
-      final txDate = DateTime.parse(t.tanggal);
-      return txDate.month == month && txDate.year == year;
-    }).toList();
+    return FutureBuilder<CalendarReportData>(
+      future: finance.getCalendarStatsAsync(
+        transaksi: widget.transaksi,
+        year: year,
+        month: month,
+      ),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Padding(
+            padding: EdgeInsets.all(40.0),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
 
-    final currentYearTxs = widget.transaksi.where((t) {
-      return DateTime.parse(t.tanggal).year == year;
-    }).toList();
-    
-    // 1. STATS HARIAN
-    Map<int, Map<String, double>> dailyStats = {};
-    for (var tx in currentMonthTxs) {
-      int day = DateTime.parse(tx.tanggal).day;
-      dailyStats.putIfAbsent(day, () => {'masuk': 0.0, 'keluar': 0.0});
-      if (tx.jenis == 'Pemasukan') dailyStats[day]!['masuk'] = dailyStats[day]!['masuk']! + tx.nominal;
-      if (tx.jenis == 'Pengeluaran') dailyStats[day]!['keluar'] = dailyStats[day]!['keluar']! + tx.nominal;
-    }
+        final reportData = snapshot.data!;
+        final dailyStats = reportData.dailyStats;
+        final weeklyStats = reportData.weeklyStats;
+        final monthlyStats = reportData.monthlyStats;
+        final totalWeeks = reportData.totalWeeks;
 
-    // 2. STATS MINGGUAN
-    Map<int, Map<String, double>> weeklyStats = {};
-    for (int w = 1; w <= 5; w++) {
-      weeklyStats[w] = {'masuk': 0.0, 'keluar': 0.0};
-      int startD = (w - 1) * 7 + 1;
-      int endD = w * 7;
-      var txs = currentMonthTxs.where((t) {
-        int d = DateTime.parse(t.tanggal).day;
-        return d >= startD && d <= endD;
-      });
-      for (var tx in txs) {
-        if (tx.jenis == 'Pemasukan') weeklyStats[w]!['masuk'] = weeklyStats[w]!['masuk']! + tx.nominal;
-        if (tx.jenis == 'Pengeluaran') weeklyStats[w]!['keluar'] = weeklyStats[w]!['keluar']! + tx.nominal;
-      }
-    }
-
-    // 3. STATS BULANAN
-    Map<int, Map<String, double>> monthlyStats = {};
-    for (int m = 1; m <= 12; m++) {
-      monthlyStats[m] = {'masuk': 0.0, 'keluar': 0.0};
-      var txs = currentYearTxs.where((t) => DateTime.parse(t.tanggal).month == m);
-      for (var tx in txs) {
-        if (tx.jenis == 'Pemasukan') monthlyStats[m]!['masuk'] = monthlyStats[m]!['masuk']! + tx.nominal;
-        if (tx.jenis == 'Pengeluaran') monthlyStats[m]!['keluar'] = monthlyStats[m]!['keluar']! + tx.nominal;
-      }
-    }
-
-    // =======================================================
-    // 📅 GRID KALENDER DINAMIS
-    // =======================================================
     Widget gridContent = const SizedBox.shrink();
     Widget daysHeader = const SizedBox.shrink();
     final today = DateTime.now();
@@ -157,19 +130,8 @@ class _CalendarPnlSectionState extends State<CalendarPnlSection> {
                         color: isSelected || isTodaySquare ? finance.themeAccent : finance.themeText,
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    if (stats['masuk']! > 0)
-                      Text(
-                        Formatters.formatUangCompact(stats['masuk']!).replaceAll(RegExp(r'^Rp\s?'), ''),
-                        style: const TextStyle(fontSize: 7, fontWeight: FontWeight.bold, color: Colors.greenAccent),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    if (stats['keluar']! > 0)
-                      Text(
-                        Formatters.formatUangCompact(stats['keluar']!).replaceAll(RegExp(r'^Rp\s?'), ''),
-                        style: const TextStyle(fontSize: 7, fontWeight: FontWeight.bold, color: Colors.redAccent),
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                    if (stats['masuk']! > 0 || stats['keluar']! > 0)
+                      TransactionSummaryStrip(masuk: stats['masuk']!, keluar: stats['keluar']!, finance: finance),
                   ],
                 ),
               ),
@@ -195,7 +157,7 @@ class _CalendarPnlSectionState extends State<CalendarPnlSection> {
     // ---> MODE WEEKLY
     else if (_activeToggle == 'Weekly') {
       List<Widget> weeksWidgets = [];
-      for (int w = 1; w <= 5; w++) {
+      for (int w = 1; w <= totalWeeks; w++) {
         final stats = weeklyStats[w] ?? {'masuk': 0.0, 'keluar': 0.0};
         // 🟢 FIX WARNING KUNING: Variabel hasTx yang nganggur Dihapus
         int startD = (w - 1) * 7 + 1;
@@ -215,11 +177,8 @@ class _CalendarPnlSectionState extends State<CalendarPnlSection> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text("Minggu $w", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: finance.themeText)),
-                  const SizedBox(height: 4),
-                  if (stats['masuk']! > 0)
-                    Text(Formatters.formatUangCompact(stats['masuk']!).replaceAll(RegExp(r'^Rp\s?'), ''), style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.greenAccent)),
-                  if (stats['keluar']! > 0)
-                    Text(Formatters.formatUangCompact(stats['keluar']!).replaceAll(RegExp(r'^Rp\s?'), ''), style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.redAccent)),
+                    if (stats['masuk']! > 0 || stats['keluar']! > 0)
+                      TransactionSummaryStrip(masuk: stats['masuk']!, keluar: stats['keluar']!, finance: finance),
                 ],
               ),
             ),
@@ -257,11 +216,8 @@ class _CalendarPnlSectionState extends State<CalendarPnlSection> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(Formatters.monthNames[m - 1].substring(0, 3).toUpperCase(), style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: isCurrentMonthBox ? finance.themeAccent : finance.themeText)),
-                  const SizedBox(height: 4),
-                  if (stats['masuk']! > 0)
-                    Text(Formatters.formatUangCompact(stats['masuk']!).replaceAll(RegExp(r'^Rp\s?'), ''), style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.greenAccent)),
-                  if (stats['keluar']! > 0)
-                    Text(Formatters.formatUangCompact(stats['keluar']!).replaceAll(RegExp(r'^Rp\s?'), ''), style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.redAccent)),
+                    if (stats['masuk']! > 0 || stats['keluar']! > 0)
+                      TransactionSummaryStrip(masuk: stats['masuk']!, keluar: stats['keluar']!, finance: finance),
                 ],
               ),
             ),
@@ -283,74 +239,80 @@ class _CalendarPnlSectionState extends State<CalendarPnlSection> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: finance.themeBg,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: finance.themeBorder),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: ['Daily', 'Weekly', 'Monthly'].map((tab) {
-                    bool isActive = _activeToggle == tab;
-                    return GestureDetector(
-                      onTap: () {
-                        HapticFeedback.lightImpact();
-                        setState(() {
-                          _activeToggle = tab;
-                          _selectedDate = null;
-                        });
-                      },
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: isActive ? finance.themeAccent : Colors.transparent,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Text(
-                          tab,
-                          style: TextStyle(
-                            color: isActive ? Colors.white : finance.themeTextSub,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 10
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: finance.themeBg,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: finance.themeBorder),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: ['Daily', 'Weekly', 'Monthly'].map((tab) {
+                      bool isActive = _activeToggle == tab;
+                      return GestureDetector(
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          setState(() {
+                            _activeToggle = tab;
+                            _selectedDate = null;
+                          });
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: isActive ? finance.themeAccent : Colors.transparent,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Text(
+                            tab,
+                            style: TextStyle(
+                              color: isActive ? Colors.white : finance.themeTextSub,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 10
+                            ),
                           ),
                         ),
-                      ),
-                    );
-                  }).toList(),
+                      );
+                    }).toList(),
+                  ),
                 ),
-              ),
-              
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                decoration: BoxDecoration(color: finance.themeBg, borderRadius: BorderRadius.circular(12), border: Border.all(color: finance.themeBorder)),
-                child: Row(
-                  children: [
-                    GestureDetector(
-                      onTap: () => _changeDate(DateTime(_activeToggle == 'Monthly' ? year - 1 : year, _activeToggle == 'Monthly' ? 1 : month - 1, 1)),
-                      child: Padding(padding: const EdgeInsets.all(4), child: Icon(Icons.chevron_left_rounded, color: finance.themeTextSub, size: 16)),
-                    ),
-                    SizedBox(
-                      width: 65,
-                      child: Text(
-                        _activeToggle == 'Monthly' ? "TAHUN $year" : "${Formatters.monthNames[month - 1].substring(0, 3).toUpperCase()} $year",
-                        style: TextStyle(color: finance.themeText, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.0),
-                        textAlign: TextAlign.center,
+                
+                const SizedBox(width: 16), // Memberi sedikit jarak jika di-scale down
+
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                  decoration: BoxDecoration(color: finance.themeBg, borderRadius: BorderRadius.circular(12), border: Border.all(color: finance.themeBorder)),
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => _changeDate(DateTime(_activeToggle == 'Monthly' ? year - 1 : year, _activeToggle == 'Monthly' ? 1 : month - 1, 1)),
+                        child: Padding(padding: const EdgeInsets.all(4), child: Icon(Icons.chevron_left_rounded, color: finance.themeTextSub, size: 16)),
                       ),
-                    ),
-                    GestureDetector(
-                      onTap: () => _changeDate(DateTime(_activeToggle == 'Monthly' ? year + 1 : year, _activeToggle == 'Monthly' ? 1 : month + 1, 1)),
-                      child: Padding(padding: const EdgeInsets.all(4), child: Icon(Icons.chevron_right_rounded, color: finance.themeTextSub, size: 16)),
-                    ),
-                  ],
+                      SizedBox(
+                        width: 65,
+                        child: Text(
+                          _activeToggle == 'Monthly' ? "TAHUN $year" : "${Formatters.monthNames[month - 1].substring(0, 3).toUpperCase()} $year",
+                          style: TextStyle(color: finance.themeText, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.0),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => _changeDate(DateTime(_activeToggle == 'Monthly' ? year + 1 : year, _activeToggle == 'Monthly' ? 1 : month + 1, 1)),
+                        child: Padding(padding: const EdgeInsets.all(4), child: Icon(Icons.chevron_right_rounded, color: finance.themeTextSub, size: 16)),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           
           const SizedBox(height: 24),
@@ -358,6 +320,42 @@ class _CalendarPnlSectionState extends State<CalendarPnlSection> {
           gridContent,
         ],
       ),
+    );
+        }
+    );
+  }
+}
+
+class TransactionSummaryStrip extends StatelessWidget {
+  final double masuk;
+  final double keluar;
+  final FinanceProvider finance;
+
+  const TransactionSummaryStrip({
+    super.key,
+    required this.masuk,
+    required this.keluar,
+    required this.finance,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        if (masuk > 0)
+          Text(
+            Formatters.formatUangCompact(masuk).replaceAll(RegExp(r'^Rp\s?'), ''),
+            style: TextStyle(fontSize: 7, fontWeight: FontWeight.bold, color: finance.themeAccent),
+            overflow: TextOverflow.ellipsis,
+          ),
+        if (keluar > 0)
+          Text(
+            Formatters.formatUangCompact(keluar).replaceAll(RegExp(r'^Rp\s?'), ''),
+            style: const TextStyle(fontSize: 7, fontWeight: FontWeight.bold, color: Colors.redAccent),
+            overflow: TextOverflow.ellipsis,
+          ),
+      ],
     );
   }
 }

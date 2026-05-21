@@ -7,6 +7,7 @@ import 'package:intl/date_symbol_data_local.dart';
 // 🚀 IMPORT UTILS & CONFIG
 import 'package:aplikasi_keuangan/providers/finance_provider.dart';
 import 'package:aplikasi_keuangan/core/theme/app_theme.dart';
+import 'package:aplikasi_keuangan/services/notification_service.dart';
 
 // 🚀 IMPORT LAYOUT & SCREENS
 import 'package:aplikasi_keuangan/shared/layouts/main_layout.dart'; 
@@ -31,6 +32,9 @@ import 'package:aplikasi_keuangan/screens/dashboard/wallets/manage_wallets_scree
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('id_ID', null); 
+  
+  await NotificationService().init();
+  await NotificationService().requestPermissions();
   
   runApp(
     MultiProvider(

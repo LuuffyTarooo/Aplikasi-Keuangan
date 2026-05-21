@@ -488,27 +488,29 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> with Sing
                     );
                   }),
                   
-                  Divider(color: finance.themeBorder, height: 16),
-                  
-                  GestureDetector(
-                    onTap: () {
-                      setState(() { _isWalletDropdownOpen = false; _isTargetWalletDropdownOpen = false; });
-                      _showAddWalletSheet(context, finance);
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(16), border: Border.all(color: finance.themeBorder, style: BorderStyle.solid)), 
-                      alignment: Alignment.center,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.add, color: finance.themeTextSub, size: 16),
-                          const SizedBox(width: 6),
-                          Text("DOMPET BARU", style: TextStyle(color: finance.themeTextSub, fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 1.0)),
-                        ],
+                  if (_jenis == 'Pemasukan') ...[
+                    Divider(color: finance.themeBorder, height: 16),
+                    
+                    GestureDetector(
+                      onTap: () {
+                        setState(() { _isWalletDropdownOpen = false; _isTargetWalletDropdownOpen = false; });
+                        _showAddWalletSheet(context, finance);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(16), border: Border.all(color: finance.themeBorder, style: BorderStyle.solid)), 
+                        alignment: Alignment.center,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.add, color: finance.themeTextSub, size: 16),
+                            const SizedBox(width: 6),
+                            Text("DOMPET BARU", style: TextStyle(color: finance.themeTextSub, fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 1.0)),
+                          ],
+                        ),
                       ),
-                    ),
-                  )
+                    )
+                  ]
                 ],
               ),
             ),

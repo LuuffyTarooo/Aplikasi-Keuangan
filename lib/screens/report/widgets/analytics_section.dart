@@ -6,8 +6,10 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
 import 'package:aplikasi_keuangan/providers/finance_provider.dart';
+import 'package:aplikasi_keuangan/providers/mixins/report_mixin.dart';
 import 'package:aplikasi_keuangan/models/transaction_model.dart';
 import 'package:aplikasi_keuangan/core/utils/formatters.dart';
+import 'package:aplikasi_keuangan/shared/widgets/toggle_button_group.dart';
 
 class AnalyticsSection extends StatefulWidget {
   final List<TransactionModel> transaksi;
@@ -41,8 +43,7 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
   @override
   Widget build(BuildContext context) {
     final finance = Provider.of<FinanceProvider>(context);
-    final modeTxs = widget.transaksi.where((t) => t.jenis == _analysisMode).toList();
-
+    
     // 🟢 AUTO-SYNC: Bikin daftar warna Donut Chart dinamis! 
     final List<Color> donutColors = [
       finance.themeAccent,     
@@ -98,27 +99,49 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
 
         const SizedBox(height: 16),
 
-        if (modeTxs.isEmpty)
-          Container(
-            padding: const EdgeInsets.all(32),
-            decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(24), border: Border.all(color: finance.themeBorder)),
-            child: Center(
-              child: Column(
-                children: [
-                  Icon(Icons.pie_chart_outline_rounded, size: 48, color: finance.themeTextSub.withValues(alpha:0.3)),
-                  const SizedBox(height: 12),
-                  Text("BELUM ADA DATA", style: TextStyle(color: finance.themeTextSub, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 2)),
-                ],
-              ),
-            ),
-          )
-        else ...[
-          // --- BAR CHART (TREND) ---
-          _buildBarChart(modeTxs, finance),
-          const SizedBox(height: 16),
-          // --- DONUT CHART (SOURCES) ---
-          _buildDonutChart(modeTxs, finance, donutColors),
-        ],
+        FutureBuilder<AnalyticsReportData>(
+          future: finance.getAnalyticsStatsAsync(
+            transaksi: widget.transaksi,
+            year: widget.currentDate.year,
+            month: widget.currentDate.month,
+            analysisMode: _analysisMode,
+            trendFilter: _trendFilter,
+            selectedBarIndex: _selectedBarIndex,
+          ),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return const Padding(
+                padding: EdgeInsets.all(40.0),
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+
+            final data = snapshot.data!;
+            if (!data.hasModeTransactions) {
+              return Container(
+                padding: const EdgeInsets.all(32),
+                decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(24), border: Border.all(color: finance.themeBorder)),
+                child: Center(
+                  child: Column(
+                    children: [
+                      Icon(Icons.pie_chart_outline_rounded, size: 48, color: finance.themeTextSub.withValues(alpha:0.3)),
+                      const SizedBox(height: 12),
+                      Text("BELUM ADA DATA", style: TextStyle(color: finance.themeTextSub, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 2)),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            return Column(
+              children: [
+                _buildBarChart(data, finance),
+                const SizedBox(height: 16),
+                _buildDonutChart(data, finance, donutColors),
+              ],
+            );
+          },
+        ),
       ],
     );
   }
@@ -126,52 +149,10 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
   // ====================================================
   // ⚡ 1. WIDGET BAR CHART (LOGIKA TREND)
   // ====================================================
-  Widget _buildBarChart(List<TransactionModel> modeTxs, FinanceProvider finance) {
+  Widget _buildBarChart(AnalyticsReportData data, FinanceProvider finance) {
     final year = widget.currentDate.year;
     final month = widget.currentDate.month;
     final colorUtama = finance.themeAccent;
-
-    final trendTxs = modeTxs.where((t) {
-      final d = DateTime.parse(t.tanggal);
-      if (_trendFilter == 'Monthly') return d.year == year;
-      return d.year == year && d.month == month;
-    }).toList();
-
-    double trendTotalAmount = trendTxs.fold(0, (sum, curr) => sum + curr.nominal);
-
-    List<Map<String, dynamic>> barData = [];
-    if (_trendFilter == 'Daily') {
-      int daysInMonth = DateTime(year, month + 1, 0).day;
-      // 🟢 FIX BIRU LINTER: Tambahin Kurung Kurawal { }
-      for (int i = 1; i <= daysInMonth; i++) { 
-        barData.add({'label': '$i', 'nominal': 0.0}); 
-      }
-      for (var tx in trendTxs) {
-        int d = DateTime.parse(tx.tanggal).day;
-        barData[d - 1]['nominal'] += tx.nominal;
-      }
-    } else if (_trendFilter == 'Weekly') {
-      for (int i = 1; i <= 5; i++) { 
-        barData.add({'label': 'Wk $i', 'nominal': 0.0}); 
-      }
-      for (var tx in trendTxs) {
-        int d = DateTime.parse(tx.tanggal).day;
-        int weekIdx = ((d - 1) / 7).floor();
-        if (weekIdx > 4) weekIdx = 4;
-        barData[weekIdx]['nominal'] += tx.nominal;
-      }
-    } else if (_trendFilter == 'Monthly') {
-      for (int i = 0; i < 12; i++) { 
-        barData.add({'label': Formatters.monthNames[i].substring(0, 3), 'nominal': 0.0}); 
-      }
-      for (var tx in trendTxs) {
-        int m = DateTime.parse(tx.tanggal).month;
-        barData[m - 1]['nominal'] += tx.nominal;
-      }
-    }
-
-    double maxNominal = barData.fold(0.0, (max, item) => item['nominal'] > max ? item['nominal'] : max);
-    double safeMax = maxNominal > 0 ? maxNominal : 1;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -189,7 +170,7 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
                   children: [
                     Text(_analysisMode == 'Pemasukan' ? 'Income Trend' : 'Expense Trend', style: TextStyle(color: finance.themeTextSub, fontSize: 12, fontWeight: FontWeight.bold)),
                     Text(
-                      Formatters.formatCurrency(trendTotalAmount),
+                      Formatters.formatCurrency(data.trendTotalAmount),
                       style: TextStyle(color: finance.themeText, fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -1),
                     ),
                     const SizedBox(height: 8),
@@ -207,20 +188,17 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(color: finance.themeBg, borderRadius: BorderRadius.circular(8), border: Border.all(color: finance.themeBorder)),
-                    child: Row(
-                      children: ['Daily', 'Weekly', 'Monthly'].map((tf) {
-                        bool isActive = _trendFilter == tf;
-                        return GestureDetector(
-                          onTap: () { HapticFeedback.lightImpact(); setState(() { _trendFilter = tf; _selectedBarIndex = null; }); },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(color: isActive ? finance.themeAccent : Colors.transparent, borderRadius: BorderRadius.circular(6)),
-                            child: Text(tf, style: TextStyle(color: isActive ? Colors.white : finance.themeTextSub, fontSize: 8, fontWeight: FontWeight.w900)),
-                          ),
-                        );
-                      }).toList(),
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(color: finance.themeBg, borderRadius: BorderRadius.circular(20), border: Border.all(color: finance.themeBorder)),
+                    child: ToggleButtonGroup(
+                      options: const ['Daily', 'Weekly', 'Monthly'],
+                      selected: _trendFilter,
+                      onSelected: (val) {
+                        setState(() {
+                          _trendFilter = val;
+                          _selectedBarIndex = null;
+                        });
+                      },
                     ),
                   ),
                   if (_selectedBarIndex != null)
@@ -245,75 +223,81 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
             height: 220, 
             child: LayoutBuilder(
               builder: (context, constraints) {
-                return SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(),
-                  child: SizedBox(
-                    width: _trendFilter == 'Daily' ? 600 : constraints.maxWidth,
-                    child: Stack(
-                      children: [
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: List.generate(5, (index) => Container(height: 1, width: _trendFilter == 'Daily' ? 600 : constraints.maxWidth, color: finance.themeBorder)),
-                        ),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: barData.asMap().entries.map((entry) {
-                            int i = entry.key;
-                            double nominal = entry.value['nominal'];
-                            String label = entry.value['label'];
-                            double percent = (nominal / safeMax).clamp(0.0, 1.0);
-                            bool isZero = nominal == 0;
-                            bool isSelected = _selectedBarIndex == i;
-                            bool isDimmed = _selectedBarIndex != null && _selectedBarIndex != i;
-
-                            return Expanded(
-                              child: GestureDetector(
-                                onTap: () {
-                                  if (!isZero) {
-                                    HapticFeedback.lightImpact();
-                                    setState(() => _selectedBarIndex = _selectedBarIndex == i ? null : i);
-                                  }
-                                },
-                                child: Container(
-                                  color: Colors.transparent,
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    children: [
-                                      if (isSelected && !isZero)
-                                        FittedBox(
-                                          fit: BoxFit.scaleDown,
-                                          child: Container(
-                                            margin: const EdgeInsets.only(bottom: 6),
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                            decoration: BoxDecoration(color: colorUtama.withValues(alpha:0.2), borderRadius: BorderRadius.circular(6), border: Border.all(color: colorUtama)),
-                                            child: Text(Formatters.formatUangCompact(nominal), style: TextStyle(color: finance.themeText, fontSize: 9, fontWeight: FontWeight.bold)),
-                                          ),
-                                        ),
-                                      AnimatedContainer(
-                                        duration: const Duration(milliseconds: 300),
-                                        height: isZero ? 2 : (percent * 140),
-                                        width: 16,
-                                        margin: const EdgeInsets.only(bottom: 8),
-                                        decoration: BoxDecoration(
-                                          color: isZero ? finance.themeBorder : colorUtama,
-                                          borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
-                                          boxShadow: isSelected ? [BoxShadow(color: colorUtama.withValues(alpha:0.6), blurRadius: 10)] : [],
-                                        ),
-                                        foregroundDecoration: BoxDecoration(color: isDimmed ? Colors.black.withValues(alpha:0.5) : Colors.transparent),
-                                      ),
-                                      Text(label, style: TextStyle(color: isSelected ? colorUtama : finance.themeTextSub, fontSize: 9, fontWeight: FontWeight.bold)),
-                                      const SizedBox(height: 4),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ],
+                return Stack(
+                  children: [
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: List.generate(5, (index) => Container(height: 1, width: constraints.maxWidth, color: finance.themeBorder)),
                     ),
-                  ),
+                    ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      physics: const BouncingScrollPhysics(),
+                      itemCount: data.barData.length,
+                      itemBuilder: (context, index) {
+                        final point = data.barData[index];
+                        double nominal = point.nominal;
+                        String label = point.label;
+                        double percent = (nominal / data.safeMax).clamp(0.0, 1.0);
+                        bool isZero = nominal == 0;
+                        bool isSelected = _selectedBarIndex == index;
+                        bool isDimmed = _selectedBarIndex != null && _selectedBarIndex != index;
+                        
+                        // Menyesuaikan lebar item ListView
+                        double itemWidth;
+                        if (_trendFilter == 'Daily') {
+                          itemWidth = 32.0; 
+                        } else if (_trendFilter == 'Weekly') {
+                          itemWidth = constraints.maxWidth / data.barData.length;
+                        } else {
+                          itemWidth = constraints.maxWidth / 6;
+                        }
+
+                        return SizedBox(
+                          width: itemWidth,
+                          child: GestureDetector(
+                            onTap: () {
+                              if (!isZero) {
+                                HapticFeedback.lightImpact();
+                                setState(() => _selectedBarIndex = _selectedBarIndex == index ? null : index);
+                              }
+                            },
+                            child: Container(
+                              color: Colors.transparent,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  if (isSelected && !isZero)
+                                    FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Container(
+                                        margin: const EdgeInsets.only(bottom: 6),
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(color: colorUtama.withValues(alpha:0.2), borderRadius: BorderRadius.circular(6), border: Border.all(color: colorUtama)),
+                                        child: Text(Formatters.formatUangCompact(nominal), style: TextStyle(color: finance.themeText, fontSize: 9, fontWeight: FontWeight.bold)),
+                                      ),
+                                    ),
+                                  AnimatedContainer(
+                                    duration: const Duration(milliseconds: 300),
+                                    height: isZero ? 2 : (percent * 140),
+                                    width: 16,
+                                    margin: const EdgeInsets.only(bottom: 8),
+                                    decoration: BoxDecoration(
+                                      color: isZero ? finance.themeBorder : colorUtama,
+                                      borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                                      boxShadow: isSelected ? [BoxShadow(color: colorUtama.withValues(alpha:0.6), blurRadius: 10)] : [],
+                                    ),
+                                    foregroundDecoration: BoxDecoration(color: isDimmed ? Colors.black.withValues(alpha:0.5) : Colors.transparent),
+                                  ),
+                                  Text(label, style: TextStyle(color: isSelected ? colorUtama : finance.themeTextSub, fontSize: 9, fontWeight: FontWeight.bold)),
+                                  const SizedBox(height: 4),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 );
               }
             ),
@@ -326,57 +310,7 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
   // ====================================================
   // ⚡ 2. WIDGET DONUT CHART & GRID (LOGIKA KATEGORI)
   // ====================================================
-  Widget _buildDonutChart(List<TransactionModel> modeTxs, FinanceProvider finance, List<Color> donutColors) {
-    final year = widget.currentDate.year;
-    final month = widget.currentDate.month;
-
-    List<TransactionModel> sourceTxs = [];
-    String periodLabel = '';
-
-    if (_selectedBarIndex != null) {
-      if (_trendFilter == 'Daily') {
-        int selectedDay = _selectedBarIndex! + 1;
-        sourceTxs = modeTxs.where((t) {
-          final d = DateTime.parse(t.tanggal);
-          return d.year == year && d.month == month && d.day == selectedDay;
-        }).toList();
-        periodLabel = '$selectedDay ${Formatters.monthNames[month - 1].substring(0, 3).toUpperCase()} $year';
-      } else if (_trendFilter == 'Weekly') {
-        sourceTxs = modeTxs.where((t) {
-          final d = DateTime.parse(t.tanggal);
-          int weekIdx = ((d.day - 1) / 7).floor();
-          if (weekIdx > 4) weekIdx = 4;
-          return d.year == year && d.month == month && weekIdx == _selectedBarIndex;
-        }).toList();
-        periodLabel = 'MINGGU ${_selectedBarIndex! + 1}';
-      } else if (_trendFilter == 'Monthly') {
-        sourceTxs = modeTxs.where((t) {
-          final d = DateTime.parse(t.tanggal);
-          return d.year == year && d.month == (_selectedBarIndex! + 1);
-        }).toList();
-        periodLabel = '${Formatters.monthNames[_selectedBarIndex!].toUpperCase()} $year';
-      }
-    } else {
-      sourceTxs = modeTxs.where((t) {
-        final d = DateTime.parse(t.tanggal);
-        return d.year == year && d.month == month;
-      }).toList();
-      periodLabel = '${Formatters.monthNames[month - 1].toUpperCase()} $year';
-    }
-
-    double sourceTotalAmount = sourceTxs.fold(0, (sum, t) => sum + t.nominal);
-
-    Map<String, double> kategoriMap = {};
-    for (var tx in sourceTxs) {
-      String cat = tx.kategori.isEmpty ? 'Lain-lain' : tx.kategori;
-      kategoriMap[cat] = (kategoriMap[cat] ?? 0) + tx.nominal;
-    }
-
-    List<MapEntry<String, double>> chartData = kategoriMap.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-
-    List<double> chartValues = chartData.map((e) => e.value).toList();
-
+  Widget _buildDonutChart(AnalyticsReportData data, FinanceProvider finance, List<Color> donutColors) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(24), border: Border.all(color: finance.themeBorder)),
@@ -393,7 +327,7 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
                   children: [
                     Icon(Icons.chevron_left_rounded, size: 14, color: finance.themeTextSub),
                     const SizedBox(width: 4),
-                    Text(periodLabel, style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+                    Text(data.periodLabel, style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
                     const SizedBox(width: 4),
                     Icon(Icons.chevron_right_rounded, size: 14, color: finance.themeTextSub),
                   ],
@@ -402,7 +336,7 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
             ],
           ),
           
-          if (chartData.isEmpty)
+          if (data.chartData.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 40),
               child: Text("Tidak ada data untuk periode ini.", style: TextStyle(color: finance.themeTextSub, fontSize: 12, fontWeight: FontWeight.bold)),
@@ -418,7 +352,7 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
                     height: 160,
                     child: CustomPaint(
                       painter: _DonutChartPainter(
-                        values: chartValues,
+                        values: data.chartValues,
                         colors: donutColors, 
                         strokeWidth: 35, 
                       ),
@@ -430,7 +364,7 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
                       Text("TOTAL", style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
                       const SizedBox(height: 2),
                       Text(
-                        Formatters.formatUangCompact(sourceTotalAmount),
+                        Formatters.formatUangCompact(data.sourceTotalAmount),
                         style: TextStyle(color: finance.themeText, fontSize: 16, fontWeight: FontWeight.w900),
                       ),
                     ],
@@ -447,11 +381,11 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
                   spacing: 12,
                   runSpacing: 12,
                   alignment: WrapAlignment.center, 
-                  children: chartData.asMap().entries.map((entry) {
+                  children: data.chartData.asMap().entries.map((entry) {
                     int idx = entry.key;
-                    String catName = entry.value.key;
-                    double nominal = entry.value.value;
-                    double percent = sourceTotalAmount > 0 ? (nominal / sourceTotalAmount) * 100 : 0;
+                    String catName = entry.value.name;
+                    double nominal = entry.value.nominal;
+                    double percent = data.sourceTotalAmount > 0 ? (nominal / data.sourceTotalAmount) * 100 : 0;
                     
                     Color catColor = donutColors[idx % donutColors.length];
 
@@ -460,7 +394,7 @@ class _AnalyticsSectionState extends State<AnalyticsSection> {
                       child: GestureDetector(
                         onTap: () {
                           HapticFeedback.lightImpact();
-                          _showCategoryDetailModal(catName, sourceTxs.where((t) => t.kategori == catName).toList(), finance);
+                          _showCategoryDetailModal(catName, data.sourceTxs.where((t) => t.kategori == catName).toList(), finance);
                         },
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),

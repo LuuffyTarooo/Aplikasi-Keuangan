@@ -109,126 +109,27 @@ class _VoiceAssistantSheetState extends State<VoiceAssistantSheet> with SingleTi
     }
   }
 
-  void _processVoiceCommand(String text, FinanceProvider finance) {
+  void _processVoiceCommand(String text, FinanceProvider finance) async {
     if (!mounted) return;
     
-    String lowerText = text.toLowerCase();
-    double detectedNominal = 0;
-    String detectedKategori = '';
-    String detectedDompet = '';
-
-    RegExp regExp = RegExp(r'\d+');
-    Iterable<RegExpMatch> matches = regExp.allMatches(lowerText.replaceAll('.', ''));
-    if (matches.isNotEmpty) {
-      String numStr = matches.map((m) => m.group(0)).join('');
-      double parsedNum = double.tryParse(numStr) ?? 0;
-      if (lowerText.contains('ribu') && parsedNum < 1000) parsedNum *= 1000;
-      if (lowerText.contains('juta') && parsedNum < 1000) parsedNum *= 1000000;
-      detectedNominal = parsedNum;
-    } else {
-      // 🟢 FIX WARNING: Udah dibungkus pakai kurung kurawal {}
-      if (lowerText.contains('gocap')) {
-        detectedNominal = 50000;
-      } else if (lowerText.contains('cepek')) {
-        detectedNominal = 100000;
-      } else if (lowerText.contains('goceng')) {
-        detectedNominal = 5000;
-      } else if (lowerText.contains('ceng')) {
-        detectedNominal = 1000;
-      }
-    }
-
-    Map<String, List<String>> synMap = {
-      'Makan & Minuman': ['makan', 'kopi', 'jajan', 'nasi', 'minum', 'bakso', 'sate', 'gofood', 'grabfood', 'kafe', 'indomie', 'starbucks', 'mcd'],
-      'Transportasi': ['bensin', 'parkir', 'ojek', 'grab', 'gojek', 'kereta', 'tol', 'angkot', 'bus'],
-      'Belanja': ['beli', 'indomaret', 'alfamart', 'belanja', 'shopee', 'tokopedia', 'supermarket', 'rokok'],
-      'Tagihan': ['listrik', 'air', 'wifi', 'internet', 'token', 'pajak', 'kos', 'kosan'],
-      'Hiburan': ['nonton', 'bioskop', 'netflix', 'game', 'spotify', 'main']
-    };
-
-    for (var kat in finance.myKategori) {
-      if (kat.jenis == 'Pengeluaran' && lowerText.contains(kat.name.toLowerCase())) {
-        detectedKategori = kat.name; break;
-      }
-    }
-
-    if (detectedKategori.isEmpty) {
-      for (var entry in synMap.entries) {
-        if (entry.value.any((s) => lowerText.contains(s))) {
-          var found = finance.myKategori.where((k) => k.jenis == 'Pengeluaran' && k.name.toLowerCase().contains(entry.key.toLowerCase())).toList();
-          if (found.isNotEmpty) { 
-            detectedKategori = found.first.name; 
-          } else {
-            detectedKategori = entry.key; 
-          }
-          break;
-        }
-      }
-    }
-
-    Map<String, List<String>> walletSyns = {
-      'Tunai': ['tunai', 'cash', 'uang pas', 'dompet', 'uang'],
-      'BCA': ['bca', 'm-bca', 'mbca'],
-      'GoPay': ['gopay', 'go-pay'],
-      'OVO': ['ovo', 'ofo'],
-      'Dana': ['dana', 'aplikasi dana']
-    };
-
-    for (var dana in finance.mySumberDana) {
-      if (lowerText.contains(dana.namaAset.toLowerCase())) {
-        detectedDompet = dana.idDana; break;
-      }
-    }
-
-    if (detectedDompet.isEmpty) {
-      for (var entry in walletSyns.entries) {
-        if (entry.value.any((s) => lowerText.contains(s))) {
-          var found = finance.mySumberDana.where((d) => d.namaAset.toLowerCase().contains(entry.key.toLowerCase())).toList();
-          if (found.isNotEmpty) { detectedDompet = found.first.idDana; break; }
-        }
-      }
-    }
-
-    if (detectedNominal == 0) {
+    try {
+      final parsed = await finance.parseVoiceIntent(text);
+      if (!mounted) return;
       setState(() {
-        _errorMsg = "Nominal uangnya nggak kedengeran Jar. Ngomongnya yang jelas coba.";
+        _parsedData = parsed;
         _isListening = false;
+        _errorMsg = '';
+      });
+      HapticFeedback.lightImpact();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMsg = e.toString().replaceAll('Exception: ', '');
+        _isListening = false;
+        _parsedData = null;
       });
       HapticFeedback.heavyImpact();
-      return;
     }
-
-    String finalDompet = detectedDompet.isNotEmpty ? detectedDompet : (finance.mySumberDana.isNotEmpty ? finance.mySumberDana.first.idDana : '');
-    String finalKategori = detectedKategori.isNotEmpty ? detectedKategori : 'Lain-lain';
-
-    if (finalDompet.isEmpty) {
-      setState(() { _errorMsg = "Lu belum punya dompet sama sekali Jar!"; _isListening = false; });
-      return;
-    }
-
-    var dompetObj = finance.mySumberDana.firstWhere((d) => d.idDana == finalDompet, orElse: () => finance.mySumberDana.first);
-    if (dompetObj.saldoTerkini < detectedNominal) {
-      setState(() {
-        _errorMsg = "Saldo ${dompetObj.namaAset} lu nggak cukup buat jajan ini!";
-        _isListening = false;
-      });
-      HapticFeedback.heavyImpact();
-      return;
-    }
-
-    setState(() {
-      _parsedData = {
-        'nominal': detectedNominal,
-        'kategori': finalKategori,
-        'id_dana': finalDompet,
-        'nama_dompet': dompetObj.namaAset,
-        'keterangan': text.isNotEmpty ? text[0].toUpperCase() + text.substring(1) : 'Transaksi Suara',
-        'jenis': 'Pengeluaran',
-        'tanggal': DateTime.now().toIso8601String(),
-      };
-      _isListening = false;
-    });
-    HapticFeedback.lightImpact();
   }
 
   void _simulasikanSuara(FinanceProvider finance) {
@@ -356,7 +257,7 @@ class _VoiceAssistantSheetState extends State<VoiceAssistantSheet> with SingleTi
             Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.green.withValues(alpha:0.1), shape: BoxShape.circle), child: const Icon(Icons.check_rounded, color: Colors.green, size: 40)),
             const SizedBox(height: 16),
             Text("Berhasil Ditangkap", style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2.0)),
-            Text(Formatters.formatCurrency(_parsedData!['nominal']), style: const TextStyle(color: Colors.green, fontSize: 40, fontWeight: FontWeight.w900, letterSpacing: -1)),
+            Text(Formatters.formatCurrency(_parsedData!['nominal']), style: TextStyle(color: _parsedData!['jenis'] == 'Pengeluaran' ? Colors.redAccent : Colors.green, fontSize: 40, fontWeight: FontWeight.w900, letterSpacing: -1)),
             const SizedBox(height: 24),
             
             Container(
@@ -364,20 +265,32 @@ class _VoiceAssistantSheetState extends State<VoiceAssistantSheet> with SingleTi
               decoration: BoxDecoration(color: finance.themeBg, borderRadius: BorderRadius.circular(20), border: Border.all(color: finance.themeBorder)),
               child: Column(
                 children: [
-                  _buildDetailRow("Kategori", _parsedData!['kategori'], finance),
+                  _buildDetailRow("Jenis", _parsedData!['jenis'], finance),
                   Divider(color: finance.themeBorder, height: 24),
-                  _buildDetailRow("Dompet", _parsedData!['nama_dompet'], finance),
+                  if (_parsedData!['jenis'] != 'Transfer') ...[
+                    _buildDetailRow("Kategori", _parsedData!['kategori'], finance),
+                    Divider(color: finance.themeBorder, height: 24),
+                    _buildDetailRow("Dompet", _parsedData!['nama_dompet'], finance),
+                  ] else ...[
+                    _buildDetailRow("Dari Dompet", _parsedData!['nama_dompet'], finance),
+                    Divider(color: finance.themeBorder, height: 24),
+                    _buildDetailRow("Ke Dompet", _parsedData!['nama_dompet_tujuan'] ?? '-', finance),
+                  ],
                   Divider(color: finance.themeBorder, height: 24),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text("Catatan Suara", style: TextStyle(color: finance.themeTextSub, fontSize: 12, fontWeight: FontWeight.bold)),
+                      Text("Catatan", style: TextStyle(color: finance.themeTextSub, fontSize: 12, fontWeight: FontWeight.bold)),
                       Flexible(child: Text('"${_parsedData!['keterangan']}"', textAlign: TextAlign.right, style: TextStyle(color: finance.themeText, fontSize: 12, fontStyle: FontStyle.italic, fontWeight: FontWeight.w900))),
                     ],
                   ),
                 ],
               ),
             ),
+            if (_parsedData!['tts_message'] != null) ...[
+              const SizedBox(height: 16),
+              Text(_parsedData!['tts_message'], textAlign: TextAlign.center, style: TextStyle(color: finance.themeAccent, fontSize: 12, fontWeight: FontWeight.bold)),
+            ],
             const SizedBox(height: 32),
 
             Row(
@@ -390,7 +303,7 @@ class _VoiceAssistantSheetState extends State<VoiceAssistantSheet> with SingleTi
                 Expanded(
                   flex: 3,
                   child: CustomButton(
-                    text: "Simpan Jajan", variant: ButtonVariant.primary,
+                    text: "Simpan Transaksi", variant: ButtonVariant.primary,
                     onPressed: () {
                       HapticFeedback.heavyImpact();
                       finance.handleSaveTransaksi(TransactionModel(
@@ -398,6 +311,7 @@ class _VoiceAssistantSheetState extends State<VoiceAssistantSheet> with SingleTi
                         jenis: _parsedData!['jenis'],
                         nominal: _parsedData!['nominal'],
                         idDana: _parsedData!['id_dana'],
+                        idDanaTujuan: _parsedData!['id_dana_tujuan'] ?? '',
                         kategori: _parsedData!['kategori'],
                         keterangan: _parsedData!['keterangan'],
                         tanggal: _parsedData!['tanggal'],
