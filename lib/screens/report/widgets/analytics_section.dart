@@ -29,7 +29,7 @@ class AnalyticsSection extends StatefulWidget {
 
 class _AnalyticsSectionState extends State<AnalyticsSection> {
   String _analysisMode = 'Pengeluaran';
-  String _trendFilter = 'Weekly';
+  String _trendFilter = 'Daily';
   int? _selectedBarIndex;
 
   @override

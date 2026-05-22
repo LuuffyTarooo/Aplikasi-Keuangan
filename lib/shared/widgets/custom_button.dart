@@ -82,9 +82,9 @@ class CustomButton extends StatelessWidget {
               )
             else if (icon != null) ...[
               Icon(icon, color: textColor, size: 20),
-              const SizedBox(width: 8),
+              if (text.isNotEmpty) const SizedBox(width: 8),
             ],
-            if (!isLoading)
+            if (!isLoading && text.isNotEmpty)
               Flexible(
                 child: Text(
                   text,

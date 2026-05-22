@@ -111,6 +111,23 @@ class _MainLayoutState extends State<MainLayout> {
             onPanStart: _handlePanStart,
             onPanUpdate: _handlePanUpdate,
             onPanEnd: _handlePanEnd,
+            onLongPressStart: (details) {
+              HapticFeedback.mediumImpact();
+              setState(() {
+                _isLongPressing = true;
+                _isHoveringMic = true;
+              });
+            },
+            onLongPressEnd: (details) {
+              if (_isLongPressing && _isHoveringMic && widget.onVoiceAdd != null) {
+                HapticFeedback.heavyImpact();
+                widget.onVoiceAdd!();
+              }
+              setState(() {
+                _isLongPressing = false;
+                _isHoveringMic = false;
+              });
+            },
             onTap: _handleTap,
             child: Stack(
               clipBehavior: Clip.none,

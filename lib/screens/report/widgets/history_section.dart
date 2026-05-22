@@ -85,7 +85,28 @@ class _HistoryScreenState extends State<HistoryScreen> {
       if (_activeMode == 'Harian') {
         _currentDate = _currentDate.add(Duration(days: offset));
       } else if (_activeMode == 'Mingguan') {
-        _currentDate = _currentDate.add(Duration(days: offset * 7));
+        int weekIdx = ((_currentDate.day - 1) / 7).floor();
+        int year = _currentDate.year;
+        int month = _currentDate.month;
+        
+        if (offset > 0) {
+          weekIdx++;
+          int daysInMonth = DateTime(year, month + 1, 0).day;
+          if (weekIdx * 7 + 1 > daysInMonth) {
+            month++;
+            if (month > 12) { month = 1; year++; }
+            weekIdx = 0;
+          }
+        } else if (offset < 0) {
+          weekIdx--;
+          if (weekIdx < 0) {
+            month--;
+            if (month < 1) { month = 12; year--; }
+            int prevDays = DateTime(year, month + 1, 0).day;
+            weekIdx = prevDays >= 29 ? 4 : 3;
+          }
+        }
+        _currentDate = DateTime(year, month, weekIdx * 7 + 1);
       } else if (_activeMode == 'Bulanan') {
         _currentDate = DateTime(_currentDate.year, _currentDate.month + offset, _currentDate.day);
       }
@@ -96,8 +117,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
     if (_activeMode == 'Harian') {
       return DateFormat('dd MMM yyyy').format(_currentDate);
     } else if (_activeMode == 'Mingguan') {
-      DateTime start = _currentDate.subtract(Duration(days: _currentDate.weekday - 1));
-      DateTime end = start.add(const Duration(days: 6));
+      int weekIdx = ((_currentDate.day - 1) / 7).floor();
+      int startDay = weekIdx * 7 + 1;
+      int endDay = startDay + 6;
+      int daysInMonth = DateTime(_currentDate.year, _currentDate.month + 1, 0).day;
+      if (endDay > daysInMonth) endDay = daysInMonth;
+      
+      DateTime start = DateTime(_currentDate.year, _currentDate.month, startDay);
+      DateTime end = DateTime(_currentDate.year, _currentDate.month, endDay);
       return "${start.day} ${Formatters.monthNames[start.month - 1].substring(0,3)} - ${end.day} ${Formatters.monthNames[end.month - 1].substring(0,3)}";
     } else if (_activeMode == 'Bulanan') {
       return "${Formatters.monthNames[_currentDate.month - 1]} ${_currentDate.year}";
@@ -118,8 +145,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
       if (_activeMode == 'Harian') {
         return dt.year == _currentDate.year && dt.month == _currentDate.month && dt.day == _currentDate.day;
       } else if (_activeMode == 'Mingguan') {
-        DateTime start = _currentDate.subtract(Duration(days: _currentDate.weekday - 1));
-        DateTime end = start.add(const Duration(days: 6, hours: 23, minutes: 59, seconds: 59));
+        int weekIdx = ((_currentDate.day - 1) / 7).floor();
+        int startDay = weekIdx * 7 + 1;
+        int endDay = startDay + 6;
+        int daysInMonth = DateTime(_currentDate.year, _currentDate.month + 1, 0).day;
+        if (endDay > daysInMonth) endDay = daysInMonth;
+
+        DateTime start = DateTime(_currentDate.year, _currentDate.month, startDay);
+        DateTime end = DateTime(_currentDate.year, _currentDate.month, endDay, 23, 59, 59);
         return dt.isAfter(start.subtract(const Duration(seconds: 1))) && dt.isBefore(end);
       } else if (_activeMode == 'Bulanan') {
         return dt.year == _currentDate.year && dt.month == _currentDate.month;
@@ -486,7 +519,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                         TransactionDetailSheet.show(
                                           context: context, transaction: tx, sumberDana: finance.mySumberDana,
                                           onEdit: (selectedTx) { Navigator.push(context, MaterialPageRoute(builder: (_) => TransactionFormScreen(initialData: selectedTx))); },
-                                          onDelete: (selectedTx) {},
+                                          onDelete: (selectedTx) {
+                                            finance.deleteTransaksi(selectedTx.idTransaksi);
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(
+                                                content: Text('Transaksi berhasil dihapus'),
+                                                backgroundColor: Colors.green,
+                                                behavior: SnackBarBehavior.floating,
+                                              ),
+                                            );
+                                          },
                                         );
                                       },
                                       child: Container( 

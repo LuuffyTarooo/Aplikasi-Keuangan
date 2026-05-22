@@ -196,8 +196,31 @@ class _DetailContent extends StatelessWidget {
                       variant: ButtonVariant.danger,
                       onPressed: () {
                         HapticFeedback.heavyImpact();
-                        Navigator.pop(context);
-                        onDelete(transaction);
+                        showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            backgroundColor: finance.themeBg,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: BorderSide(color: finance.themeBorder)),
+                            content: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.redAccent.withValues(alpha:0.1), shape: BoxShape.circle), child: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 32)),
+                                const SizedBox(height: 16),
+                                Text("Hapus Transaksi?", style: TextStyle(color: finance.themeText, fontSize: 18, fontWeight: FontWeight.w900)),
+                                const SizedBox(height: 8),
+                                Text("Beneran mau dihapus nih transaksinya?", textAlign: TextAlign.center, style: TextStyle(color: finance.themeTextSub, fontSize: 12)),
+                                const SizedBox(height: 24),
+                                CustomButton(text: "Ya, Hapus", variant: ButtonVariant.danger, fullWidth: true, onPressed: () {
+                                  Navigator.pop(context); // Tutup dialog
+                                  Navigator.pop(context); // Tutup bottom sheet
+                                  onDelete(transaction);
+                                }),
+                                const SizedBox(height: 8),
+                                CustomButton(text: "Batal", variant: ButtonVariant.secondary, fullWidth: true, onPressed: () => Navigator.pop(context)),
+                              ],
+                            ),
+                          ),
+                        );
                       },
                     ),
                     const SizedBox(width: 12),

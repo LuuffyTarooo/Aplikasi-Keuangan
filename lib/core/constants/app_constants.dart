@@ -66,4 +66,15 @@ class AppColors {
     Colors.green,
     Color(0xFFA855F7),
   ];
+}
+
+class AvatarConstants {
+  AvatarConstants._();
+
+  static const List<String> emojis = [
+    '😎', '😀', '🤑', '💸', '🚀', '🌟', '🍔', '🐶',
+    '🐱', '🎮', '⚽', '🎸', '🎨', '🔥', '👑', '💎',
+    '🦊', '🦁', '🐼', '🦄', '🍀', '🍕', '🍩', '🎉',
+    '🎧', '🎯', '🏝️', '🧸', '💡', '🏆', '👻', '🤖',
+  ];
 }

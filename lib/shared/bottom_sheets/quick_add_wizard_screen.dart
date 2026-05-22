@@ -50,9 +50,11 @@ class _QuickAddWizardScreenState extends State<QuickAddWizardScreen> {
       '',
     );
     final inputNominal = nominalRaw.isNotEmpty ? double.parse(nominalRaw) : 0.0;
-    
+
     // Cegah crash jika dompet belum ter-load
-    final fallbackDanaId = finance.mySumberDana.isNotEmpty ? finance.mySumberDana.first.idDana : 'default_wallet';
+    final fallbackDanaId = finance.mySumberDana.isNotEmpty
+        ? finance.mySumberDana.first.idDana
+        : 'default_wallet';
 
     final newTx = TransactionModel(
       idTransaksi: 'tx_${DateTime.now().millisecondsSinceEpoch}',
@@ -147,12 +149,14 @@ class _QuickAddWizardScreenState extends State<QuickAddWizardScreen> {
       case 0:
         return _buildTipeStep(finance);
       case 1:
-        if (_jenis == 'Transfer')
+        if (_jenis == 'Transfer') {
           return _buildDompetStep(finance, isSumber: true);
+        }
         return _buildKategoriStep(finance, categories);
       case 2:
-        if (_jenis == 'Transfer')
+        if (_jenis == 'Transfer') {
           return _buildDompetStep(finance, isSumber: false);
+        }
         return _buildDompetStep(finance, isSumber: true);
       case 3:
         return _buildNominalStep(finance);
@@ -255,8 +259,9 @@ class _QuickAddWizardScreenState extends State<QuickAddWizardScreen> {
           const SizedBox(height: 16),
           Column(
             children: finance.mySumberDana.map((d) {
-              if (!isSumber && d.idDana == _idDana)
+              if (!isSumber && d.idDana == _idDana) {
                 return const SizedBox(); // Cegah transfer ke dompet yang sama
+              }
               return Column(
                 children: [
                   ListTile(
@@ -271,10 +276,11 @@ class _QuickAddWizardScreenState extends State<QuickAddWizardScreen> {
                       style: TextStyle(color: finance.themeTextSub),
                     ),
                     onTap: () {
-                      if (isSumber)
+                      if (isSumber) {
                         _idDana = d.idDana;
-                      else
+                      } else {
                         _idDanaTujuan = d.idDana;
+                      }
                       _nextStep();
                     },
                   ),

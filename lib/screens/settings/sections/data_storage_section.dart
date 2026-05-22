@@ -1,11 +1,18 @@
 // lib/screens/settings/sheets/data_storage_sheet.dart
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:path_provider/path_provider.dart';
 
 import 'package:aplikasi_keuangan/providers/finance_provider.dart';
 import 'package:aplikasi_keuangan/shared/widgets/custom_button.dart';
+import 'package:aplikasi_keuangan/models/user_model.dart';
+import 'package:aplikasi_keuangan/models/wallet_model.dart';
+import 'package:aplikasi_keuangan/models/transaction_model.dart';
 
 class DataStorageSheet {
   static void show(BuildContext context) {
@@ -26,6 +33,8 @@ class _DataStorageContent extends StatefulWidget {
 }
 
 class _DataStorageContentState extends State<_DataStorageContent> {
+  bool _isLoading = false;
+
   
   void _showToast(String message, {bool isError = false}) {
     if (!mounted) return; 
@@ -47,109 +56,141 @@ class _DataStorageContentState extends State<_DataStorageContent> {
   }
 
   // ==========================================
-  // ⚡ FUNGSI: BACKUP DATA (COPY TO CLIPBOARD)
+  // ⚡ FUNGSI: BACKUP DATA (JSON FILE)
   // ==========================================
-  void _handleBackupData(FinanceProvider finance) async {
+  Future<void> _handleBackupData(FinanceProvider finance) async {
+    if (_isLoading) return;
     HapticFeedback.heavyImpact();
+    setState(() => _isLoading = true);
     
     try {
-      Map<String, dynamic> allData = {
-        'sumberDana': finance.mySumberDana.map((e) => e.namaAset).toList(), 
-        'transaksi': finance.myTransaksi.map((e) => e.keterangan).toList(),
-        'backupDate': DateTime.now().toIso8601String(),
-        'versi': '1.0.0',
+      final backupData = {
+        'user_profile': finance.currentUser!.toJson(),
+        'wallets': finance.mySumberDana.map((w) => w.toJson()).toList(),
+        'transactions': finance.myTransaksi.map((t) => t.toJson()).toList(),
+        'metadata': {
+          'backup_date': DateTime.now().toIso8601String(),
+          'app_version': '1.0.0',
+        }
       };
 
-      String jsonString = jsonEncode(allData);
-      await Clipboard.setData(ClipboardData(text: jsonString));
+      String jsonString = jsonEncode(backupData);
+      
+      final tempDir = await getTemporaryDirectory();
+      final now = DateTime.now();
+      final dateStr = "${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}_${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}";
+      final filePath = '${tempDir.path}/walkmeal_backup_$dateStr.json';
+      
+      final file = File(filePath);
+      await file.writeAsString(jsonString);
 
       if (!mounted) return;
-
-      _showToast("✅ Data berhasil di-backup! Teks JSON sudah disalin. Silakan tempel (Paste) di Notes/WhatsApp lu.");
-      Navigator.pop(context);
+      setState(() => _isLoading = false);
+      
+      final result = await Share.shareXFiles([XFile(filePath)], text: 'Backup Data Aplikasi Keuangan');
+      
+      if (!mounted) return;
+      if (result.status == ShareResultStatus.success) {
+        _showToast("✅ Backup berhasil tersimpan ke cloud");
+      } else if (result.status == ShareResultStatus.dismissed) {
+        _showToast("❌ Backup dibatalkan. Data belum tersimpan.", isError: true);
+      }
+      
     } catch (e) {
       if (!mounted) return;
+      setState(() => _isLoading = false);
       _showToast("❌ Gagal melakukan backup data.", isError: true);
     }
   }
 
   // ==========================================
-  // ⚡ FUNGSI: RESTORE DATA (PASTE JSON DIALOG)
+  // ⚡ FUNGSI: RESTORE DATA (JSON FILE)
   // ==========================================
-  void _handleRestoreData(FinanceProvider finance) {
+  Future<void> _handleRestoreData(FinanceProvider finance) async {
+    if (_isLoading) return;
     HapticFeedback.mediumImpact();
-    String pastedJson = "";
+    
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+      );
 
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          backgroundColor: finance.themeBg, // 🟢 AUTO-SYNC Latar Solid
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: BorderSide(color: finance.themeBorder)),
-          title: Row(
-            children: [
-              const Icon(Icons.upload_file_rounded, color: Colors.orangeAccent),
-              const SizedBox(width: 8),
-              Text("Restore Data", style: TextStyle(color: finance.themeText, fontSize: 18, fontWeight: FontWeight.bold)),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text("Tempel (Paste) teks JSON backup lu di kotak bawah ini. Peringatan: Data lama akan tertimpa sepenuhnya!", style: TextStyle(color: finance.themeTextSub, fontSize: 12)),
-              const SizedBox(height: 16),
-              
-              TextField(
-                onChanged: (val) => pastedJson = val,
-                maxLines: 4,
-                style: const TextStyle(color: Colors.orangeAccent, fontSize: 11, fontFamily: 'monospace', fontWeight: FontWeight.bold),
-                decoration: InputDecoration(
-                  filled: true, 
-                  fillColor: finance.themeCard, // 🟢 Kotak input ngikut tema
-                  hintText: '{"sumberDana": [...], "transaksi": [...]}',
-                  hintStyle: TextStyle(color: Colors.orangeAccent.withValues(alpha:0.3), fontSize: 11),
-                  contentPadding: const EdgeInsets.all(16),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: finance.themeBorder)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: finance.themeBorder)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Colors.orangeAccent, width: 1.5)),
+      if (result == null || result.files.isEmpty) return;
+
+      final file = File(result.files.single.path!);
+      final jsonString = await file.readAsString();
+      final Map<String, dynamic> data = jsonDecode(jsonString);
+
+      if (!data.containsKey('user_profile') || 
+          !data.containsKey('wallets') || 
+          !data.containsKey('transactions')) {
+        _showToast("Format File Tidak Valid", isError: true);
+        return;
+      }
+
+      final userProfile = UserModel.fromJson(data['user_profile']);
+      final wallets = (data['wallets'] as List).map((e) => WalletModel.fromJson(e)).toList();
+      final transactions = (data['transactions'] as List).map((e) => TransactionModel.fromJson(e)).toList();
+
+      if (!mounted) return;
+
+      bool? confirm = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) {
+          return AlertDialog(
+            backgroundColor: finance.themeBg,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: BorderSide(color: finance.themeBorder)),
+            title: Row(
+              children: [
+                const Icon(Icons.warning_rounded, color: Colors.orangeAccent),
+                const SizedBox(width: 8),
+                Text("Konfirmasi Restore", style: TextStyle(color: finance.themeText, fontSize: 18, fontWeight: FontWeight.bold)),
+              ],
+            ),
+            content: Text(
+              "Data saat ini akan dihapus dan diganti dengan data backup. Lanjutkan?",
+              style: TextStyle(color: finance.themeTextSub, fontSize: 14),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: Text("Batal", style: TextStyle(color: finance.themeTextSub)),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: finance.themeAccent, 
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
                 ),
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: const Text("Lanjutkan", style: TextStyle(fontWeight: FontWeight.bold)),
               ),
             ],
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text("Batal", style: TextStyle(color: finance.themeTextSub))),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orangeAccent, 
-                foregroundColor: Colors.black, 
-                elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
-              ),
-              onPressed: () {
-                try {
-                  jsonDecode(pastedJson);
-                  
-                  HapticFeedback.heavyImpact();
-                  
-                  if (!mounted) return;
-                  Navigator.pop(dialogContext); // Tutup dialog
+          );
+        },
+      );
 
-                  if (!mounted) return;
-                  Navigator.pop(context); // Tutup bottom sheet
-                  
-                  _showToast("🎉 Data berhasil dipulihkan!");
-                } catch (e) {
-                  HapticFeedback.heavyImpact();
-                  if (!mounted) return;
-                  _showToast("❌ Teks backup tidak valid atau korup!", isError: true);
-                }
-              },
-              child: const Text("Pulihkan Data", style: TextStyle(fontWeight: FontWeight.bold)),
-            )
-          ],
+      if (confirm == true) {
+        setState(() => _isLoading = true);
+        
+        await finance.restoreFromBackup(
+          userProfile: userProfile,
+          wallets: wallets,
+          transactions: transactions,
         );
-      },
-    );
+        
+        if (mounted) {
+          _showToast("Restore Berhasil");
+          Navigator.pop(context); // Close the bottom sheet
+        }
+      }
+
+    } catch (e) {
+      if (mounted) _showToast("Format File Tidak Valid", isError: true);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   // ==========================================
@@ -276,7 +317,7 @@ class _DataStorageContentState extends State<_DataStorageContent> {
                             ],
                           ),
                         ),
-                        Icon(Icons.chevron_right_rounded, color: finance.themeTextSub),
+                        _isLoading ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: finance.themeAccent)) : Icon(Icons.chevron_right_rounded, color: finance.themeTextSub),
                       ],
                     ),
                   ),
@@ -302,7 +343,7 @@ class _DataStorageContentState extends State<_DataStorageContent> {
                             ],
                           ),
                         ),
-                        Icon(Icons.chevron_right_rounded, color: finance.themeTextSub),
+                        _isLoading ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: finance.themeAccent)) : Icon(Icons.chevron_right_rounded, color: finance.themeTextSub),
                       ],
                     ),
                   ),

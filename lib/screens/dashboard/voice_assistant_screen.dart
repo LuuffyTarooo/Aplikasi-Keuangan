@@ -8,6 +8,7 @@ import 'package:aplikasi_keuangan/providers/finance_provider.dart';
 import 'package:aplikasi_keuangan/models/transaction_model.dart';
 import 'package:aplikasi_keuangan/core/utils/formatters.dart';
 import 'package:aplikasi_keuangan/shared/widgets/custom_button.dart';
+import 'package:aplikasi_keuangan/screens/transaction/transaction_form_screen.dart';
 
 class VoiceAssistantSheet extends StatefulWidget {
   const VoiceAssistantSheet({super.key});
@@ -297,16 +298,10 @@ class _VoiceAssistantSheetState extends State<VoiceAssistantSheet> with SingleTi
               children: [
                 Expanded(
                   flex: 1,
-                  child: CustomButton(text: "", icon: Icons.mic_rounded, variant: ButtonVariant.secondary, onPressed: _startListening),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  flex: 3,
                   child: CustomButton(
-                    text: "Simpan Transaksi", variant: ButtonVariant.primary,
+                    text: "", icon: Icons.edit_rounded, variant: ButtonVariant.secondary, 
                     onPressed: () {
-                      HapticFeedback.heavyImpact();
-                      finance.handleSaveTransaksi(TransactionModel(
+                      final tx = TransactionModel(
                         idTransaksi: 'tx_${DateTime.now().millisecondsSinceEpoch}',
                         jenis: _parsedData!['jenis'],
                         nominal: _parsedData!['nominal'],
@@ -316,7 +311,33 @@ class _VoiceAssistantSheetState extends State<VoiceAssistantSheet> with SingleTi
                         keterangan: _parsedData!['keterangan'],
                         tanggal: _parsedData!['tanggal'],
                         userId: finance.currentUser!.id,
-                      ));
+                      );
+                      Navigator.pop(context);
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => TransactionFormScreen(initialData: tx)));
+                    }
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 3,
+                  child: CustomButton(
+                    text: "Simpan Transaksi", 
+                    variant: ButtonVariant.primary,
+                    onPressed: () {
+                      HapticFeedback.heavyImpact();
+                      final tx = TransactionModel(
+                        idTransaksi: 'tx_${DateTime.now().millisecondsSinceEpoch}',
+                        jenis: _parsedData!['jenis'],
+                        nominal: _parsedData!['nominal'],
+                        idDana: _parsedData!['id_dana'],
+                        idDanaTujuan: _parsedData!['id_dana_tujuan'] ?? '',
+                        kategori: _parsedData!['kategori'],
+                        keterangan: _parsedData!['keterangan'],
+                        tanggal: _parsedData!['tanggal'],
+                        userId: finance.currentUser!.id,
+                      );
+                      
+                      finance.handleSaveTransaksi(tx);
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("✅ Transaksi suara berhasil dicatat!"), backgroundColor: Colors.green, behavior: SnackBarBehavior.floating));
                     },

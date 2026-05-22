@@ -174,7 +174,11 @@ Map<String, dynamic> _computeAnalyticsStats(Map<String, dynamic> args) {
             d.month == month &&
             weekIdx == selectedBarIndex;
       }).toList();
-      periodLabel = 'MINGGU ${selectedBarIndex + 1}';
+      int startDay = (selectedBarIndex * 7) + 1;
+      int endDay = startDay + 6;
+      if (endDay > daysInMonth) endDay = daysInMonth;
+      String monthName = Formatters.monthNames[month - 1].toUpperCase();
+      periodLabel = 'MINGGU ${selectedBarIndex + 1} ($startDay - $endDay $monthName)';
     } else if (trendFilter == 'Monthly') {
       sourceTxs = modeTxs.where((t) {
         final d = DateTime.parse(t.tanggal);

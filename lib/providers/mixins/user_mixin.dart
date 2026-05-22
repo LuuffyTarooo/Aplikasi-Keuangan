@@ -7,6 +7,7 @@ import 'package:aplikasi_keuangan/models/saving_model.dart';
 import 'package:aplikasi_keuangan/models/debt_model.dart';
 import 'package:aplikasi_keuangan/models/reminder_model.dart';
 import 'package:aplikasi_keuangan/models/budget_model.dart';
+import 'package:aplikasi_keuangan/models/category_model.dart';
 
 /// Mixin untuk mengelola akun pengguna (switch, edit, register, delete).
 mixin UserMixin on ChangeNotifier {
@@ -27,6 +28,8 @@ mixin UserMixin on ChangeNotifier {
   set allReminders(List<ReminderModel> val);
   List<BudgetModel> get allBudgets;
   set allBudgets(List<BudgetModel> val);
+  List<CategoryModel> get allKategori;
+  set allKategori(List<CategoryModel> val);
 
   void syncToStorage();
 
@@ -39,11 +42,16 @@ mixin UserMixin on ChangeNotifier {
     }
   }
 
-  /// Mengedit nama pengguna berdasarkan ID.
-  void editUser(String userId, String newName) {
+  /// Mengedit nama atau avatar pengguna berdasarkan ID.
+  void editUser(String userId, {String? newName, String? newAvatar}) {
     final index = users.indexWhere((u) => u.id == userId);
     if (index != -1) {
-      users[index] = UserModel(id: users[index].id, name: newName);
+      final oldUser = users[index];
+      users[index] = UserModel(
+        id: oldUser.id, 
+        name: newName ?? oldUser.name,
+        avatar: newAvatar ?? oldUser.avatar,
+      );
       if (currentUser?.id == userId) currentUser = users[index];
       syncToStorage();
       notifyListeners();
@@ -66,6 +74,7 @@ mixin UserMixin on ChangeNotifier {
     allDebts.removeWhere((d) => d.userId == userId);
     allReminders.removeWhere((r) => r.userId == userId);
     allBudgets.removeWhere((b) => b.userId == userId);
+    allKategori.removeWhere((c) => c.userId == userId);
     users.removeWhere((u) => u.id == userId);
 
     if (currentUser?.id == userId) {

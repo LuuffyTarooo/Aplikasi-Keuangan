@@ -1,6 +1,7 @@
 // lib/models/category_model.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_tabler_icons/flutter_tabler_icons.dart';
+import 'package:aplikasi_keuangan/utils/category_icons.dart';
 
 class CategoryModel {
   final String id;
@@ -40,7 +41,7 @@ class CategoryModel {
       name: json['name'] ?? '',
       jenis: json['jenis'] ?? 'Pengeluaran',
       userId: json['userId'] ?? '',
-      icon: IconData(codePoint, fontFamily: fontFamily, fontPackage: fontPackage),
+      icon: _getIconFromCodePoint(codePoint),
       accentColor: Color(accentVal),
       bgColor: Color(bgVal),
       isCustom: json['isCustom'] ?? false,
@@ -62,5 +63,14 @@ class CategoryModel {
       'isCustom': isCustom,
       'index': index,
     };
+  }
+
+  // Helper function to bypass Tree Shaking compiler errors
+  static IconData _getIconFromCodePoint(int codePoint) {
+    try {
+      return categoryIcons.firstWhere((icon) => icon.codePoint == codePoint);
+    } catch (e) {
+      return TablerIcons.category; // Fallback jika tidak ditemukan
+    }
   }
 }

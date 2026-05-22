@@ -49,6 +49,7 @@ dependencies:
   flutter_tabler_icons: ^1.43.0
   home_widget: 0.8.0
   app_links: ^7.0.0
+  syncfusion_flutter_xlsio: ^33.2.7
 
 dev_dependencies:
   flutter_test:

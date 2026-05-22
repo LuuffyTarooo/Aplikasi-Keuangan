@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:aplikasi_keuangan/providers/finance_provider.dart';
 import 'package:aplikasi_keuangan/models/user_model.dart';
 import 'package:aplikasi_keuangan/shared/widgets/custom_button.dart';
+import 'package:aplikasi_keuangan/shared/widgets/edit_profile_sheet.dart'; // Import Edit Profile
 
 class AccountManagerSheet {
   static void show(BuildContext context) {
@@ -28,8 +29,6 @@ class _AccountContent extends StatefulWidget {
 class _AccountContentState extends State<_AccountContent> {
   bool _isCreating = false;
   String _newName = '';
-  String? _editingId;
-  String _editName = '';
 
   UserModel? _userToDelete;
   int _deleteStep = 0; // 0: Normal, 1: Peringatan, 2: Final
@@ -163,7 +162,6 @@ class _AccountContentState extends State<_AccountContent> {
         ),
         ...finance.users.map((user) {
           final isActive = finance.currentUser?.id == user.id;
-          final isEditing = _editingId == user.id;
 
           return Container(
             margin: const EdgeInsets.only(bottom: 8),
@@ -172,14 +170,12 @@ class _AccountContentState extends State<_AccountContent> {
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: isActive ? finance.themeAccent.withValues(alpha:0.3) : Colors.transparent),
             ),
-            child: isEditing
-                ? _buildEditField(user, finance)
-                : ListTile(
+            child: ListTile(
                     contentPadding: const EdgeInsets.symmetric(horizontal: 12),
                     leading: CircleAvatar(
                       backgroundColor: isActive ? finance.themeAccent : finance.themeCard,
                       foregroundColor: isActive ? Colors.white : finance.themeTextSub,
-                      child: Text(user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      child: Text(user.avatar, style: const TextStyle(fontSize: 20)),
                     ),
                     title: Text(user.name, style: TextStyle(color: finance.themeText, fontWeight: FontWeight.bold, fontSize: 14)),
                     subtitle: isActive ? Text("AKTIF", style: TextStyle(color: finance.themeAccent, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1.5)) : null,
@@ -188,21 +184,25 @@ class _AccountContentState extends State<_AccountContent> {
                         HapticFeedback.lightImpact();
                         finance.switchUser(user.id); 
                         Navigator.pop(context);
+                      } else {
+                        // Jika pencet akun aktif, buka Edit Profile
+                        Navigator.pop(context);
+                        EditProfileSheet.show(context, user);
                       }
                     },
-                    trailing: finance.users.length > 1 ? Row(
+                    trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         IconButton(
-                          icon: Icon(Icons.edit_rounded, color: finance.themeTextSub, size: 18),
-                          onPressed: () { HapticFeedback.lightImpact(); setState(() { _editingId = user.id; _editName = user.name; }); },
-                        ),
-                        IconButton(
-                          icon: Icon(Icons.delete_outline_rounded, color: finance.themeTextSub, size: 18),
-                          onPressed: () { HapticFeedback.lightImpact(); setState(() { _userToDelete = user; _deleteStep = 1; }); },
+                          icon: Icon(Icons.settings_rounded, color: finance.themeTextSub, size: 18),
+                          onPressed: () { 
+                            HapticFeedback.lightImpact(); 
+                            Navigator.pop(context);
+                            EditProfileSheet.show(context, user); 
+                          },
                         ),
                       ],
-                    ) : null,
+                    ),
                   ),
           );
         }),
@@ -211,40 +211,30 @@ class _AccountContentState extends State<_AccountContent> {
           leading: Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(12), border: Border.all(color: finance.themeBorder)), child: Icon(Icons.add_rounded, color: finance.themeTextSub, size: 20)),
           title: Text("AKUN BARU", style: TextStyle(color: finance.themeTextSub, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
           onTap: () { HapticFeedback.lightImpact(); setState(() => _isCreating = true); },
+        ),
+        ListTile(
+          leading: Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(12), border: Border.all(color: finance.themeBorder)), child: Icon(Icons.group_add_rounded, color: finance.themeTextSub, size: 20)),
+          title: Text("JOIN AKUN", style: TextStyle(color: finance.themeTextSub, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+          onTap: () { 
+            HapticFeedback.lightImpact(); 
+            showDialog(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                backgroundColor: finance.themeBg,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: BorderSide(color: finance.themeBorder)),
+                title: Text("Segera Hadir", style: TextStyle(color: finance.themeText, fontWeight: FontWeight.bold)),
+                content: Text("Fitur ini masih dalam pengembangan.", style: TextStyle(color: finance.themeTextSub)),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: Text("Oke", style: TextStyle(color: finance.themeAccent, fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+            );
+          },
         )
       ],
-    );
-  }
-
-  Widget _buildEditField(UserModel user, FinanceProvider finance) {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              onChanged: (val) => _editName = val,
-              controller: TextEditingController(text: _editName)..selection = TextSelection.collapsed(offset: _editName.length),
-              style: TextStyle(color: finance.themeText, fontSize: 14, fontWeight: FontWeight.bold),
-              decoration: InputDecoration(
-                filled: true, 
-                fillColor: finance.themeCard, 
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: finance.themeBorder)),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: finance.themeBorder)),
-                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: finance.themeAccent)),
-              ),
-            ),
-          ),
-          IconButton(icon: const Icon(Icons.check_rounded, color: Colors.greenAccent), onPressed: () {
-            if (_editName.trim().isNotEmpty) {
-              finance.editUser(user.id, _editName.trim());
-            }
-            setState(() => _editingId = null);
-          }),
-          IconButton(icon: Icon(Icons.close_rounded, color: finance.themeTextSub), onPressed: () => setState(() => _editingId = null)),
-        ],
-      ),
     );
   }
 

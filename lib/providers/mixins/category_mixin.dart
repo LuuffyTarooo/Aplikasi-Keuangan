@@ -16,8 +16,9 @@ mixin CategoryMixin on ChangeNotifier {
 
   // Inisialisasi kategori default jika kosong
   void initDefaultCategories() {
-    if (allKategori.isNotEmpty) return;
     if (currentUser == null) return;
+    bool hasUserCategories = allKategori.any((c) => c.userId == currentUser!.id);
+    if (hasUserCategories) return;
 
     final defaultExpenses = [
       {'name': 'Makanan & Minuman', 'icon': TablerIcons.pizza, 'colorIdx': 0},

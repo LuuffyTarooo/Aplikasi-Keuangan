@@ -51,7 +51,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 children: [
                   _buildCircleButton(
                     finance: finance, // 🟢 FIX PARAMETER
-                    child: Text(finance.currentUser?.name[0].toUpperCase() ?? 'F', style: TextStyle(color: finance.themeText, fontWeight: FontWeight.w900, fontSize: 18)),
+                    child: Text(finance.currentUser?.avatar ?? '😎', style: const TextStyle(fontSize: 18)),
                     onTap: () { HapticFeedback.lightImpact(); AccountManagerSheet.show(context); },
                   ),
                   Column(
@@ -287,7 +287,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       TransactionDetailSheet.show(
                         context: context, transaction: tx, sumberDana: finance.mySumberDana,
                         onEdit: (selectedTx) { Navigator.push(context, MaterialPageRoute(builder: (_) => TransactionFormScreen(initialData: selectedTx))); },
-                        onDelete: (selectedTx) {},
+                        onDelete: (selectedTx) {
+                          finance.deleteTransaksi(selectedTx.idTransaksi);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Transaksi berhasil dihapus'),
+                              backgroundColor: Colors.green,
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        },
                       );
                     },
                     child: Container( // 🟢 FIX: GlassCard diubah jadi Container solid

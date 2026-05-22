@@ -230,4 +230,41 @@ class FinanceProvider extends ChangeNotifier
     if (debtsJson != null) allDebts = (debtsJson as List).map((item) => DebtModel.fromJson(item)).toList();
     if (remJson != null) allReminders = (remJson as List).map((item) => ReminderModel.fromJson(item)).toList();
   }
+
+  // =========================================
+  // 💾 BACKUP & RESTORE
+  // =========================================
+
+  /// Memulihkan data dari file backup JSON.
+  /// Menimpa data user, dompet, dan transaksi dengan data dari backup.
+  Future<void> restoreFromBackup({
+    required UserModel userProfile,
+    required List<WalletModel> wallets,
+    required List<TransactionModel> transactions,
+  }) async {
+    // Replace user
+    final userIndex = users.indexWhere((u) => u.id == userProfile.id);
+    if (userIndex != -1) {
+      users[userIndex] = userProfile;
+    } else {
+      users.add(userProfile);
+    }
+    currentUser = userProfile;
+
+    // Remove existing data for this user
+    allSumberDana.removeWhere((w) => w.userId == userProfile.id);
+    allTransaksi.removeWhere((t) => t.userId == userProfile.id);
+
+    // Add restored data
+    allSumberDana.addAll(wallets);
+    allTransaksi.addAll(transactions);
+
+    // Save strictly to local storage
+    await LocalStorageService.saveData(StorageKeys.users, users.map((e) => e.toJson()).toList());
+    await LocalStorageService.saveData(StorageKeys.wallets, allSumberDana.map((e) => e.toJson()).toList());
+    await LocalStorageService.saveData(StorageKeys.transactions, allTransaksi.map((e) => e.toJson()).toList());
+
+    syncToStorage(); // sinkronisasi field sisanya jika diperlukan
+    notifyListeners();
+  }
 }
