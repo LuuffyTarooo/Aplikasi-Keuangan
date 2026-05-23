@@ -8,7 +8,7 @@ mixin SavingMixin on ChangeNotifier {
   List<SavingGoalModel> get allSavings;
   set allSavings(List<SavingGoalModel> val);
   UserModel? get currentUser;
-  void syncToStorage();
+  Future<void> syncToStorage();
 
   /// Membuat target tabungan baru dengan nama dan nominal target.
   void addSavingGoal(String name, double target) {

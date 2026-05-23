@@ -10,7 +10,9 @@ import '../../models/wallet_model.dart';
 import '../../models/category_model.dart'; 
 
 import '../../core/utils/formatters.dart';
-import '../../core/utils/wallet_helper.dart';
+import '../../core/utils/wallet_logo_resolver.dart';
+import '../../shared/widgets/wallet_logo_widget.dart';
+import '../../shared/bottom_sheets/add_wallet_sheet.dart';
 
 class TransactionFormScreen extends StatefulWidget {
   final TransactionModel? initialData;
@@ -53,14 +55,14 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> with Sing
       _nominal = widget.initialData!.nominal.toInt().toString();
       _kategori = widget.initialData!.kategori;
       _keterangan = widget.initialData!.keterangan;
-      _idDana = widget.initialData!.idDana;
-      _idDanaTujuan = widget.initialData!.idDanaTujuan ?? '';
+      _idDana = widget.initialData!.walletId;
+      _idDanaTujuan = widget.initialData!.targetWalletId ?? '';
       _tanggal = DateTime.parse(widget.initialData!.tanggal);
     } else {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         final finance = Provider.of<FinanceProvider>(context, listen: false);
-        if (finance.mySumberDana.isNotEmpty) {
-          setState(() => _idDana = finance.mySumberDana.first.idDana);
+        if (finance.myActiveWallets.isNotEmpty) {
+          setState(() => _idDana = finance.myActiveWallets.first.walletId);
         }
       });
     }
@@ -99,136 +101,6 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> with Sing
     });
   }
 
-  void _showAddWalletSheet(BuildContext context, FinanceProvider finance) {
-    String inputName = '';
-    final controller = TextEditingController();
-    final listTemplateBank = WalletHelper.popularWallets; 
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setSheetState) {
-            return Container(
-              height: MediaQuery.of(context).size.height * 0.9,
-              decoration: BoxDecoration(color: finance.themeBg, borderRadius: const BorderRadius.vertical(top: Radius.circular(32)), border: Border(top: BorderSide(color: finance.themeBorder))),
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text("Buat Dompet Baru", style: TextStyle(color: finance.themeText, fontSize: 20, fontWeight: FontWeight.w900)),
-                        GestureDetector(
-                          onTap: () => Navigator.pop(context),
-                          child: Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: finance.themeCard, shape: BoxShape.circle, border: Border.all(color: finance.themeBorder)), child: Icon(Icons.close_rounded, color: finance.themeTextSub, size: 20)),
-                        )
-                      ],
-                    ),
-                  ),
-                  
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      physics: const BouncingScrollPhysics(),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 16),
-                          Text("NAMA DOMPET CUSTOM", style: TextStyle(color: finance.themeTextSub, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
-                          const SizedBox(height: 12),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(20), border: Border.all(color: finance.themeBorder)),
-                            child: Row(
-                              children: [
-                                WalletHelper.getWalletLogo(inputName.isEmpty ? 'NE' : inputName, size: 'sm'),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: TextField(
-                                    controller: controller,
-                                    onChanged: (val) => setSheetState(() => inputName = val),
-                                    style: TextStyle(color: finance.themeText, fontSize: 16, fontWeight: FontWeight.w900),
-                                    decoration: InputDecoration(border: InputBorder.none, hintText: "cth: Celengan BCA", hintStyle: TextStyle(color: finance.themeTextSub.withValues(alpha:0.5), fontWeight: FontWeight.normal)),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          const SizedBox(height: 32),
-                          Text("ATAU PILIH TEMPLATE CEPAT", style: TextStyle(color: finance.themeTextSub, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
-                          const SizedBox(height: 16),
-
-                          GridView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 4, childAspectRatio: 0.85, crossAxisSpacing: 12, mainAxisSpacing: 12),
-                            itemCount: listTemplateBank.length,
-                            itemBuilder: (context, index) {
-                              final template = listTemplateBank[index];
-                              final isSelected = inputName.toLowerCase() == template.toLowerCase();
-                              return GestureDetector(
-                                onTap: () {
-                                  HapticFeedback.lightImpact();
-                                  setSheetState(() { inputName = template; controller.text = template; });
-                                },
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 200),
-                                  decoration: BoxDecoration(color: isSelected ? finance.themeAccent.withValues(alpha:0.1) : finance.themeCard, borderRadius: BorderRadius.circular(20), border: Border.all(color: isSelected ? finance.themeAccent : finance.themeBorder)),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      WalletHelper.getWalletLogo(template, size: 'sm'),
-                                      const SizedBox(height: 10),
-                                      Text(template, style: TextStyle(color: isSelected ? finance.themeAccent : finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.w900), maxLines: 1, overflow: TextOverflow.ellipsis),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 40), 
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  Container(
-                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-                    decoration: BoxDecoration(color: finance.themeBg, border: Border(top: BorderSide(color: finance.themeBorder))),
-                    child: GestureDetector(
-                      onTap: () {
-                        if (inputName.isNotEmpty) {
-                          final newWallet = WalletModel(idDana: 'd_${DateTime.now().millisecondsSinceEpoch}', namaAset: inputName, saldoAwal: 0, saldoTerkini: 0, userId: finance.currentUser?.id ?? '', isActive: true);
-                          finance.allSumberDana.add(newWallet);
-                          setState(() => _idDana = newWallet.idDana);
-                          finance.switchUser(finance.currentUser!.id); 
-                          Navigator.pop(context);
-                        }
-                      },
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 20),
-                        decoration: BoxDecoration(color: inputName.isNotEmpty ? finance.themeAccent : finance.themeCard, borderRadius: BorderRadius.circular(24), border: Border.all(color: inputName.isNotEmpty ? finance.themeAccent : finance.themeBorder)),
-                        alignment: Alignment.center,
-                        child: Text("Gunakan Dompet Ini", style: TextStyle(color: inputName.isNotEmpty ? Colors.white : finance.themeTextSub, fontWeight: FontWeight.w900, fontSize: 16)),
-                      ),
-                    ),
-                  )
-                ],
-              ),
-            );
-          }
-        );
-      }
-    );
-  }
-
 
 
   Future<void> _selectDate(BuildContext context, FinanceProvider finance) async {
@@ -241,7 +113,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> with Sing
   void _handleSubmit(FinanceProvider finance) async {
     if (_isSubmitting) return;
 
-    if (finance.mySumberDana.isEmpty) return _showError('Bikin dompet dulu ya Jar!');
+    if (finance.myActiveWallets.isEmpty) return _showError('Bikin dompet dulu ya Jar!');
     if (_nominal.isEmpty || _nominal == '0') {
       _triggerShake();
       return _showError('Isi nominal transaksinya dulu ya, Jar!');
@@ -250,13 +122,13 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> with Sing
     if (_jenis == 'Transfer' && _idDana == _idDanaTujuan) return _showError('Dompet asal dan tujuan nggak boleh sama!');
     if (_jenis != 'Transfer' && _kategori.isEmpty) return _showError('Pilih kategori transaksinya dulu!');
 
-    final dompetAsal = finance.mySumberDana.firstWhere((d) => d.idDana == _idDana);
+    final dompetAsal = finance.myActiveWallets.firstWhere((d) => d.walletId == _idDana);
     final inputNominal = double.parse(_nominal);
 
     if (_jenis == 'Pengeluaran' || _jenis == 'Transfer') {
-      if (inputNominal > dompetAsal.saldoTerkini) {
+      if (inputNominal > dompetAsal.currentBalance) {
         _triggerShake();
-        return _showError('Saldo ${dompetAsal.namaAset} kurang! Sisa: ${Formatters.formatCurrency(dompetAsal.saldoTerkini)}');
+        return _showError('Saldo ${dompetAsal.walletName} kurang! Sisa: ${Formatters.formatCurrency(dompetAsal.currentBalance)}');
       }
     }
 
@@ -265,7 +137,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> with Sing
     final newTx = TransactionModel(
       idTransaksi: widget.initialData?.idTransaksi ?? '',
       jenis: _jenis, nominal: inputNominal,
-      idDana: _idDana, idDanaTujuan: _jenis == 'Transfer' ? _idDanaTujuan : null,
+      walletId: _idDana, targetWalletId: _jenis == 'Transfer' ? _idDanaTujuan : null,
       kategori: _jenis == 'Transfer' ? 'Transfer' : _kategori,
       keterangan: _keterangan.isEmpty ? 'Transaksi' : _keterangan,
       tanggal: _tanggal.toIso8601String(),
@@ -312,19 +184,19 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> with Sing
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  if (finance.mySumberDana.isEmpty)
+                  if (finance.myActiveWallets.isEmpty)
                     Padding(padding: const EdgeInsets.all(16), child: Text("Belum ada dompet", textAlign: TextAlign.center, style: TextStyle(color: finance.themeTextSub))),
                     
-                  ...finance.mySumberDana.map((dompet) {
-                    if (isTujuan && dompet.idDana == _idDana) return const SizedBox.shrink();
-                    final isSelected = isTujuan ? _idDanaTujuan == dompet.idDana : _idDana == dompet.idDana;
+                  ...finance.myActiveWallets.map((dompet) {
+                    if (isTujuan && dompet.walletId == _idDana) return const SizedBox.shrink();
+                    final isSelected = isTujuan ? _idDanaTujuan == dompet.walletId : _idDana == dompet.walletId;
 
                     return GestureDetector(
                       onTap: () {
                         HapticFeedback.lightImpact();
                         setState(() {
-                          if (isTujuan) { _idDanaTujuan = dompet.idDana; _isTargetWalletDropdownOpen = false; } 
-                          else { _idDana = dompet.idDana; _isWalletDropdownOpen = false; }
+                          if (isTujuan) { _idDanaTujuan = dompet.walletId; _isTargetWalletDropdownOpen = false; } 
+                          else { _idDana = dompet.walletId; _isWalletDropdownOpen = false; }
                         });
                       },
                       child: AnimatedContainer(
@@ -338,14 +210,14 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> with Sing
                         ),
                         child: Row(
                           children: [
-                            WalletHelper.getWalletLogo(dompet.namaAset, size: 'sm'),
+                            WalletLogoWidget(walletName: dompet.walletName, size: 'sm'),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(dompet.namaAset, style: TextStyle(color: isSelected ? finance.themeAccent : finance.themeText, fontWeight: FontWeight.w900, fontSize: 13)),
-                                  Text(Formatters.formatCurrency(dompet.saldoTerkini), style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.bold)),
+                                  if (!WalletLogoResolver.hasLogo(dompet.walletName)) Text(dompet.walletName, style: TextStyle(color: isSelected ? finance.themeAccent : finance.themeText, fontWeight: FontWeight.w900, fontSize: 13)),
+                                  Text(Formatters.formatCurrency(dompet.currentBalance), style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.bold)),
                                 ],
                               ),
                             ),
@@ -361,7 +233,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> with Sing
                     GestureDetector(
                       onTap: () {
                         setState(() { _isWalletDropdownOpen = false; _isTargetWalletDropdownOpen = false; });
-                        _showAddWalletSheet(context, finance);
+                        AddWalletSheet.show(context, finance);
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 14),
@@ -392,9 +264,9 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> with Sing
     final finance = Provider.of<FinanceProvider>(context);
     final isToday = DateFormat('yyyy-MM-dd').format(_tanggal) == DateFormat('yyyy-MM-dd').format(DateTime.now());
     
-    final emptyWallet = WalletModel(idDana: '', namaAset: 'Pilih Dompet', saldoAwal: 0, saldoTerkini: 0, userId: '');
-    final dompetAsal = finance.mySumberDana.isEmpty ? emptyWallet : finance.mySumberDana.firstWhere((d) => d.idDana == _idDana, orElse: () => finance.mySumberDana.first);
-    final dompetTujuan = (_idDanaTujuan.isNotEmpty && finance.mySumberDana.isNotEmpty) ? finance.mySumberDana.firstWhere((d) => d.idDana == _idDanaTujuan, orElse: () => finance.mySumberDana.first) : null;
+    final emptyWallet = WalletModel(walletId: '', walletName: 'Pilih Dompet', initialBalance: 0, currentBalance: 0, userId: '');
+    final dompetAsal = finance.myActiveWallets.isEmpty ? emptyWallet : finance.myActiveWallets.firstWhere((d) => d.walletId == _idDana, orElse: () => finance.myActiveWallets.first);
+    final dompetTujuan = (_idDanaTujuan.isNotEmpty && finance.myActiveWallets.isNotEmpty) ? finance.myActiveWallets.firstWhere((d) => d.walletId == _idDanaTujuan, orElse: () => finance.myActiveWallets.first) : null;
 
     final listKategori = _getDisplayCategories(finance);
     final bool isReadyToSave = _nominal.isNotEmpty && _nominal != '0' && (_jenis == 'Transfer' ? _idDanaTujuan.isNotEmpty : _kategori.isNotEmpty);
@@ -475,7 +347,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> with Sing
                                       link: _walletLink,
                                       child: _buildPillTile(
                                         finance: finance,
-                                        widget: Row(mainAxisAlignment: MainAxisAlignment.center, children: [if (dompetAsal.namaAset != 'Pilih Dompet') ...[WalletHelper.getWalletLogo(dompetAsal.namaAset, size: 'sm'), const SizedBox(width: 8)], Flexible(child: Text(dompetAsal.namaAset, style: TextStyle(color: finance.themeText, fontWeight: FontWeight.bold, fontSize: 14), overflow: TextOverflow.ellipsis))]), 
+                                        widget: Row(mainAxisAlignment: MainAxisAlignment.center, children: [if (dompetAsal.walletName != 'Pilih Dompet') WalletLogoWidget(walletName: dompetAsal.walletName, size: 'sm'), if (dompetAsal.walletName == 'Pilih Dompet' || !WalletLogoResolver.hasLogo(dompetAsal.walletName)) ...[if (dompetAsal.walletName != 'Pilih Dompet') const SizedBox(width: 8), Flexible(child: Text(dompetAsal.walletName, style: TextStyle(color: finance.themeText, fontWeight: FontWeight.bold, fontSize: 14), overflow: TextOverflow.ellipsis))]]), 
                                         onTap: () => setState(() { _isWalletDropdownOpen = !_isWalletDropdownOpen; _isTargetWalletDropdownOpen = false; })
                                       ),
                                     ),
@@ -497,7 +369,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> with Sing
                                   link: _targetWalletLink,
                                   child: _buildPillTile(
                                     finance: finance,
-                                    widget: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.sync_alt_rounded, color: finance.themeTextSub, size: 16), const SizedBox(width: 8), Text(dompetTujuan?.namaAset ?? "Pilih Tujuan...", style: TextStyle(color: finance.themeText, fontWeight: FontWeight.bold, fontSize: 14))]), 
+                                    widget: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.sync_alt_rounded, color: finance.themeTextSub, size: 16), const SizedBox(width: 8), if (dompetTujuan != null) WalletLogoWidget(walletName: dompetTujuan.walletName, size: 'sm'), if (dompetTujuan == null || !WalletLogoResolver.hasLogo(dompetTujuan.walletName)) ...[if (dompetTujuan != null) const SizedBox(width: 8), Text(dompetTujuan?.walletName ?? "Pilih Tujuan...", style: TextStyle(color: finance.themeText, fontWeight: FontWeight.bold, fontSize: 14))]]), 
                                     onTap: () => setState(() { _isTargetWalletDropdownOpen = !_isTargetWalletDropdownOpen; _isWalletDropdownOpen = false; }), 
                                     borderColor: finance.themeAccent.withValues(alpha:0.5)
                                   ),
@@ -554,6 +426,28 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> with Sing
                                   ),
                                 );
                               },
+                            ),
+                          ),
+                        ] else ...[
+                          const SizedBox(height: 20),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              decoration: BoxDecoration(
+                                color: finance.themeCard,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: finance.themeBorder),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.info_outline_rounded, color: finance.themeTextSub, size: 16),
+                                  const SizedBox(width: 8),
+                                  Text("Kategori tidak diperlukan untuk Transfer", style: TextStyle(color: finance.themeTextSub, fontSize: 12, fontWeight: FontWeight.bold)),
+                                ],
+                              ),
                             ),
                           ),
                         ],

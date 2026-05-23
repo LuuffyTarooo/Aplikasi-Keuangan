@@ -6,7 +6,7 @@ import 'package:aplikasi_keuangan/providers/finance_provider.dart';
 import 'package:aplikasi_keuangan/models/transaction_model.dart';
 import 'package:aplikasi_keuangan/models/category_model.dart';
 import 'package:aplikasi_keuangan/core/utils/formatters.dart';
-import 'package:aplikasi_keuangan/core/utils/wallet_helper.dart';
+import 'package:aplikasi_keuangan/shared/widgets/wallet_logo_widget.dart';
 import 'package:aplikasi_keuangan/core/utils/audio_helper.dart';
 import 'package:aplikasi_keuangan/core/utils/haptic_helper.dart';
 
@@ -43,8 +43,8 @@ class _QuickTransactionContentState extends State<_QuickTransactionContent> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final finance = Provider.of<FinanceProvider>(context, listen: false);
-      if (finance.mySumberDana.isNotEmpty) {
-        setState(() => _idDana = finance.mySumberDana.first.idDana);
+      if (finance.myActiveWallets.isNotEmpty) {
+        setState(() => _idDana = finance.myActiveWallets.first.walletId);
       }
     });
   }
@@ -67,8 +67,8 @@ class _QuickTransactionContentState extends State<_QuickTransactionContent> {
       idTransaksi: 'tx_${DateTime.now().millisecondsSinceEpoch}',
       jenis: _jenis,
       nominal: inputNominal,
-      idDana: _idDana!,
-      idDanaTujuan: null, 
+      walletId: _idDana!,
+      targetWalletId: null, 
       kategori: _jenis == 'Transfer' ? 'Transfer' : _selectedKategori!.name,
       keterangan: _catatanController.text.isEmpty ? 'Transaksi Cepat' : _catatanController.text,
       tanggal: DateTime.now().toIso8601String(),
@@ -220,12 +220,12 @@ class _QuickTransactionContentState extends State<_QuickTransactionContent> {
                 height: 60,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
-                  itemCount: finance.mySumberDana.length,
+                  itemCount: finance.myActiveWallets.length,
                   itemBuilder: (context, index) {
-                    final d = finance.mySumberDana[index];
-                    final isSelected = _idDana == d.idDana;
+                    final d = finance.myActiveWallets[index];
+                    final isSelected = _idDana == d.walletId;
                     return GestureDetector(
-                      onTap: () { HapticFeedback.lightImpact(); setState(() => _idDana = d.idDana); },
+                      onTap: () { HapticFeedback.lightImpact(); setState(() => _idDana = d.walletId); },
                       child: Container(
                         margin: const EdgeInsets.only(right: 12),
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -236,14 +236,14 @@ class _QuickTransactionContentState extends State<_QuickTransactionContent> {
                         ),
                         child: Row(
                           children: [
-                            WalletHelper.getWalletLogo(d.namaAset, size: 'sm'),
+                            WalletLogoWidget(walletName: d.walletName, size: 'sm'),
                             const SizedBox(width: 12),
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Text(d.namaAset, style: TextStyle(color: isSelected ? finance.themeAccent : finance.themeText, fontSize: 13, fontWeight: FontWeight.bold)),
-                                Text(Formatters.formatCurrency(d.saldoTerkini), style: TextStyle(color: finance.themeTextSub, fontSize: 11, fontWeight: FontWeight.bold)),
+                                Text(d.walletName, style: TextStyle(color: isSelected ? finance.themeAccent : finance.themeText, fontSize: 13, fontWeight: FontWeight.bold)),
+                                Text(Formatters.formatCurrency(d.currentBalance), style: TextStyle(color: finance.themeTextSub, fontSize: 11, fontWeight: FontWeight.bold)),
                               ],
                             )
                           ]

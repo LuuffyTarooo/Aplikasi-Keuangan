@@ -49,9 +49,9 @@ class _ExportDialogState extends State<ExportDialog> {
     rows.add(['Tanggal', 'Jenis', 'Kategori', 'Nominal', 'Dompet', 'Catatan']);
 
     for (var tx in transactions) {
-      final dompet = finance.mySumberDana.firstWhere(
-        (d) => d.idDana == tx.idDana,
-        orElse: () => finance.mySumberDana.first,
+      final dompet = finance.myWallets.firstWhere(
+        (d) => d.walletId == tx.walletId,
+        orElse: () => finance.myWallets.first,
       );
       final date = DateFormat('yyyy-MM-dd').format(DateTime.parse(tx.tanggal));
       rows.add([
@@ -59,7 +59,7 @@ class _ExportDialogState extends State<ExportDialog> {
         tx.jenis,
         tx.kategori.isEmpty ? '-' : tx.kategori,
         tx.nominal,
-        dompet.namaAset,
+        dompet.walletName,
         tx.keterangan.isEmpty ? '-' : tx.keterangan,
       ]);
     }
@@ -200,9 +200,9 @@ class _ExportDialogState extends State<ExportDialog> {
 
     int rowIndex = 12;
     for (var tx in transactions) {
-      final dompet = finance.mySumberDana.firstWhere(
-        (d) => d.idDana == tx.idDana,
-        orElse: () => finance.mySumberDana.first,
+      final dompet = finance.myWallets.firstWhere(
+        (d) => d.walletId == tx.walletId,
+        orElse: () => finance.myWallets.first,
       );
       final date = DateFormat('yyyy-MM-dd').format(DateTime.parse(tx.tanggal));
 
@@ -212,7 +212,7 @@ class _ExportDialogState extends State<ExportDialog> {
           .getRangeByIndex(rowIndex, 3)
           .setText(tx.kategori.isEmpty ? '-' : tx.kategori);
       sheet.getRangeByIndex(rowIndex, 4).setNumber(tx.nominal);
-      sheet.getRangeByIndex(rowIndex, 5).setText(dompet.namaAset);
+      sheet.getRangeByIndex(rowIndex, 5).setText(dompet.walletName);
       sheet
           .getRangeByIndex(rowIndex, 6)
           .setText(tx.keterangan.isEmpty ? '-' : tx.keterangan);
@@ -270,6 +270,8 @@ class _ExportDialogState extends State<ExportDialog> {
 
     try {
       List<TransactionModel> txs = List.from(finance.myTransaksi);
+      // Urutkan dari yang terlama ke terbaru
+      txs.sort((a, b) => DateTime.parse(a.tanggal).compareTo(DateTime.parse(b.tanggal)));
 
       if (_exportPeriod == 'BULAN_INI') {
         txs = txs.where((t) {
@@ -291,8 +293,8 @@ class _ExportDialogState extends State<ExportDialog> {
         txs = txs
             .where(
               (t) =>
-                  t.idDana == _selectedWallet ||
-                  t.idDanaTujuan == _selectedWallet,
+                  t.walletId == _selectedWallet ||
+                  t.targetWalletId == _selectedWallet,
             )
             .toList();
       }
@@ -606,10 +608,10 @@ class _ExportDialogState extends State<ExportDialog> {
                           value: 'SEMUA',
                           child: Text('Semua Dompet'),
                         ),
-                        ...finance.mySumberDana.map(
+                        ...finance.myWallets.map(
                           (d) => DropdownMenuItem(
-                            value: d.idDana,
-                            child: Text(d.namaAset),
+                            value: d.walletId,
+                            child: Text(d.walletName),
                           ),
                         ),
                       ],

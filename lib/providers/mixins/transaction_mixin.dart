@@ -15,10 +15,10 @@ mixin TransactionMixin on ChangeNotifier {
   // Diakses dari FinanceProvider
   List<TransactionModel> get allTransaksi;
   set allTransaksi(List<TransactionModel> val);
-  List<WalletModel> get allSumberDana;
-  set allSumberDana(List<WalletModel> val);
+  List<WalletModel> get allWallets;
+  set allWallets(List<WalletModel> val);
   UserModel? get currentUser;
-  void syncToStorage();
+  Future<void> syncToStorage();
 
   /// Menyimpan transaksi baru atau memperbarui yang sudah ada.
   /// Jika `idTransaksi` kosong → transaksi baru.
@@ -33,7 +33,7 @@ mixin TransactionMixin on ChangeNotifier {
       finalTx = TransactionModel(
         idTransaksi: 't_${DateTime.now().millisecondsSinceEpoch}',
         jenis: newTx.jenis, nominal: newTx.nominal,
-        idDana: newTx.idDana, idDanaTujuan: newTx.idDanaTujuan,
+        walletId: newTx.walletId, targetWalletId: newTx.targetWalletId,
         kategori: newTx.kategori, keterangan: newTx.keterangan,
         tanggal: newTx.tanggal, userId: user.id,
       );
@@ -70,28 +70,28 @@ mixin TransactionMixin on ChangeNotifier {
   /// [isRevert] = true berarti membatalkan efek transaksi (saat edit/hapus).
   void _applyBalanceImpact(TransactionModel tx, bool isRevert) {
     final multiplier = isRevert ? -1 : 1;
-    for (var i = 0; i < allSumberDana.length; i++) {
-      final dana = allSumberDana[i];
-      double newSaldo = dana.saldoTerkini;
+    for (var i = 0; i < allWallets.length; i++) {
+      final dana = allWallets[i];
+      double newSaldo = dana.currentBalance;
 
-      if (tx.idDana == dana.idDana) {
+      if (tx.walletId == dana.walletId) {
         if (tx.jenis == TransactionTypes.expense || tx.jenis == TransactionTypes.transfer) {
           newSaldo -= (tx.nominal * multiplier);
         } else if (tx.jenis == TransactionTypes.income) {
           newSaldo += (tx.nominal * multiplier);
         }
-        allSumberDana[i] = WalletModel(
-          idDana: dana.idDana, namaAset: dana.namaAset,
-          saldoAwal: dana.saldoAwal, saldoTerkini: newSaldo,
+        allWallets[i] = WalletModel(
+          walletId: dana.walletId, walletName: dana.walletName,
+          initialBalance: dana.initialBalance, currentBalance: newSaldo,
           userId: dana.userId, isActive: dana.isActive,
         );
       }
 
-      if (tx.jenis == TransactionTypes.transfer && tx.idDanaTujuan == dana.idDana) {
+      if (tx.jenis == TransactionTypes.transfer && tx.targetWalletId == dana.walletId) {
         newSaldo += (tx.nominal * multiplier);
-        allSumberDana[i] = WalletModel(
-          idDana: dana.idDana, namaAset: dana.namaAset,
-          saldoAwal: dana.saldoAwal, saldoTerkini: newSaldo,
+        allWallets[i] = WalletModel(
+          walletId: dana.walletId, walletName: dana.walletName,
+          initialBalance: dana.initialBalance, currentBalance: newSaldo,
           userId: dana.userId, isActive: dana.isActive,
         );
       }
@@ -118,8 +118,8 @@ mixin TransactionMixin on ChangeNotifier {
           tx.idTransaksi,
           tx.jenis,
           tx.nominal,
-          tx.idDana,
-          tx.idDanaTujuan ?? "",
+          tx.walletId,
+          tx.targetWalletId ?? "",
           tx.kategori,
           tx.keterangan,
           tx.tanggal,
@@ -177,13 +177,13 @@ mixin TransactionMixin on ChangeNotifier {
           if (jenis.isEmpty) jenis = TransactionTypes.expense;
 
           // Default dompet adalah dompet pertama jika tidak ketemu id_dana
-          String idDana = rowData['id_dana']?.toString().trim() ?? '';
-          if (idDana.isEmpty && allSumberDana.isNotEmpty) {
-            idDana = allSumberDana.first.idDana;
+          String walletId = rowData['id_dana']?.toString().trim() ?? '';
+          if (walletId.isEmpty && allWallets.isNotEmpty) {
+            walletId = allWallets.first.walletId;
           }
 
-          String? idDanaTujuan = rowData['id_dana_tujuan']?.toString().trim();
-          if (idDanaTujuan != null && idDanaTujuan.isEmpty) idDanaTujuan = null;
+          String? targetWalletId = rowData['id_dana_tujuan']?.toString().trim();
+          if (targetWalletId != null && targetWalletId.isEmpty) targetWalletId = null;
 
           String kategori = rowData['kategori']?.toString().trim() ?? 'Lain-lain';
           String keterangan = rowData['keterangan']?.toString().trim() ?? '';
@@ -194,8 +194,8 @@ mixin TransactionMixin on ChangeNotifier {
             idTransaksi: idTransaksi,
             jenis: jenis,
             nominal: nominal,
-            idDana: idDana,
-            idDanaTujuan: idDanaTujuan,
+            walletId: walletId,
+            targetWalletId: targetWalletId,
             kategori: kategori,
             keterangan: keterangan,
             tanggal: tanggal,

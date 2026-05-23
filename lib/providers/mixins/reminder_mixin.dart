@@ -12,7 +12,7 @@ mixin ReminderMixin on ChangeNotifier {
   List<ReminderModel> get allReminders;
   set allReminders(List<ReminderModel> val);
   UserModel? get currentUser;
-  void syncToStorage();
+  Future<void> syncToStorage();
 
   /// Menambahkan pengingat baru, lalu mengurutkan berdasarkan tanggal jatuh tempo.
   void addReminder(ReminderModel r) {

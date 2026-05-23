@@ -61,7 +61,7 @@ class FinanceProvider extends ChangeNotifier
   UserModel? currentUser;
 
   @override
-  List<WalletModel> allSumberDana = [];
+  List<WalletModel> allWallets = [];
 
   @override
   List<TransactionModel> allTransaksi = [];
@@ -89,8 +89,13 @@ class FinanceProvider extends ChangeNotifier
 
   /// Dompet milik user aktif.
   @override
-  List<WalletModel> get mySumberDana =>
-      currentUser == null ? [] : allSumberDana.where((d) => d.userId == currentUser!.id).toList();
+  List<WalletModel> get myWallets =>
+      currentUser == null ? [] : allWallets.where((d) => d.userId == currentUser!.id).toList();
+
+  /// Dompet aktif milik user.
+  List<WalletModel> get myActiveWallets =>
+      myWallets.where((d) => d.isActive).toList();
+
 
   /// Transaksi milik user aktif.
   List<TransactionModel> get myTransaksi =>
@@ -119,18 +124,20 @@ class FinanceProvider extends ChangeNotifier
   /// Implementasi kontrak `syncToStorage()` yang digunakan oleh semua mixin.
   /// Menyimpan seluruh state ke penyimpanan lokal.
   @override
-  void syncToStorage() {
+  Future<void> syncToStorage() async {
     try {
-      LocalStorageService.saveData(StorageKeys.isDarkMode, isDarkMode);
-      LocalStorageService.saveData(StorageKeys.themeAccentColor, themeAccent.toARGB32());
-      LocalStorageService.saveData(StorageKeys.users, users.map((e) => e.toJson()).toList());
-      LocalStorageService.saveData(StorageKeys.wallets, allSumberDana.map((e) => e.toJson()).toList());
-      LocalStorageService.saveData(StorageKeys.transactions, allTransaksi.map((e) => e.toJson()).toList());
-      LocalStorageService.saveData(StorageKeys.categories, allKategori.map((e) => e.toJson()).toList());
-      LocalStorageService.saveData(StorageKeys.budgets, allBudgets.map((e) => e.toJson()).toList());
-      LocalStorageService.saveData(StorageKeys.savings, allSavings.map((e) => e.toJson()).toList());
-      LocalStorageService.saveData(StorageKeys.debts, allDebts.map((e) => e.toJson()).toList());
-      LocalStorageService.saveData(StorageKeys.reminders, allReminders.map((e) => e.toJson()).toList());
+      await Future.wait([
+        LocalStorageService.saveData(StorageKeys.isDarkMode, isDarkMode),
+        LocalStorageService.saveData(StorageKeys.themeAccentColor, themeAccent.toARGB32()),
+        LocalStorageService.saveData(StorageKeys.users, users.map((e) => e.toJson()).toList()),
+        LocalStorageService.saveData(StorageKeys.wallets, allWallets.map((e) => e.toJson()).toList()),
+        LocalStorageService.saveData(StorageKeys.transactions, allTransaksi.map((e) => e.toJson()).toList()),
+        LocalStorageService.saveData(StorageKeys.categories, allKategori.map((e) => e.toJson()).toList()),
+        LocalStorageService.saveData(StorageKeys.budgets, allBudgets.map((e) => e.toJson()).toList()),
+        LocalStorageService.saveData(StorageKeys.savings, allSavings.map((e) => e.toJson()).toList()),
+        LocalStorageService.saveData(StorageKeys.debts, allDebts.map((e) => e.toJson()).toList()),
+        LocalStorageService.saveData(StorageKeys.reminders, allReminders.map((e) => e.toJson()).toList()),
+      ]);
     } catch (e) {
       debugPrint('❌ Sync ke storage gagal: $e');
     }
@@ -218,7 +225,7 @@ class FinanceProvider extends ChangeNotifier
     }
     currentUser = users[0];
 
-    if (danaJson != null) allSumberDana = (danaJson as List).map((item) => WalletModel.fromJson(item)).toList();
+    if (danaJson != null) allWallets = (danaJson as List).map((item) => WalletModel.fromJson(item)).toList();
     if (txJson != null) allTransaksi = (txJson as List).map((item) => TransactionModel.fromJson(item)).toList();
     if (kategoriJson != null) allKategori = (kategoriJson as List).map((item) => CategoryModel.fromJson(item)).toList();
     
@@ -252,16 +259,16 @@ class FinanceProvider extends ChangeNotifier
     currentUser = userProfile;
 
     // Remove existing data for this user
-    allSumberDana.removeWhere((w) => w.userId == userProfile.id);
+    allWallets.removeWhere((w) => w.userId == userProfile.id);
     allTransaksi.removeWhere((t) => t.userId == userProfile.id);
 
     // Add restored data
-    allSumberDana.addAll(wallets);
+    allWallets.addAll(wallets);
     allTransaksi.addAll(transactions);
 
     // Save strictly to local storage
     await LocalStorageService.saveData(StorageKeys.users, users.map((e) => e.toJson()).toList());
-    await LocalStorageService.saveData(StorageKeys.wallets, allSumberDana.map((e) => e.toJson()).toList());
+    await LocalStorageService.saveData(StorageKeys.wallets, allWallets.map((e) => e.toJson()).toList());
     await LocalStorageService.saveData(StorageKeys.transactions, allTransaksi.map((e) => e.toJson()).toList());
 
     syncToStorage(); // sinkronisasi field sisanya jika diperlukan

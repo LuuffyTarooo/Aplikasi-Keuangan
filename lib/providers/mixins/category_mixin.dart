@@ -12,7 +12,7 @@ mixin CategoryMixin on ChangeNotifier {
   
   UserModel? get currentUser;
   List<TransactionModel> get allTransaksi;
-  void syncToStorage();
+  Future<void> syncToStorage();
 
   // Inisialisasi kategori default jika kosong
   void initDefaultCategories() {
@@ -91,6 +91,40 @@ mixin CategoryMixin on ChangeNotifier {
   }
 
   CategoryModel getCategoryByName(String name) {
+    if (name.toLowerCase() == 'hutang') {
+      return CategoryModel(
+        id: 'cat_hutang',
+        name: 'Hutang',
+        jenis: 'Pemasukan',
+        userId: currentUser?.id ?? '',
+        icon: Icons.call_received_rounded,
+        accentColor: Colors.redAccent,
+        bgColor: Colors.redAccent.withValues(alpha: 0.1),
+      );
+    }
+    if (name.toLowerCase() == 'piutang') {
+      return CategoryModel(
+        id: 'cat_piutang',
+        name: 'Piutang',
+        jenis: 'Pengeluaran',
+        userId: currentUser?.id ?? '',
+        icon: Icons.arrow_outward_rounded,
+        accentColor: Colors.green,
+        bgColor: Colors.green.withValues(alpha: 0.1),
+      );
+    }
+    if (name.toLowerCase() == 'tabungan' || name.toLowerCase() == 'tabung') {
+      return CategoryModel(
+        id: 'cat_tabungan',
+        name: 'Tabungan',
+        jenis: 'Pengeluaran',
+        userId: currentUser?.id ?? '',
+        icon: Icons.savings_rounded,
+        accentColor: Colors.blueAccent,
+        bgColor: Colors.blueAccent.withValues(alpha: 0.1),
+      );
+    }
+
     try {
       return allKategori.firstWhere(
         (c) => c.name.toLowerCase() == name.toLowerCase() && c.userId == currentUser?.id,

@@ -19,7 +19,7 @@ mixin ThemeMixin on ChangeNotifier {
   Color get themeBorder => _isDarkMode ? Colors.white10 : const Color(0xFFE0E0E0);
 
   // Harus di-override oleh FinanceProvider agar bisa trigger sync.
-  void syncToStorage();
+  Future<void> syncToStorage();
 
   /// Memuat preferensi tema dari penyimpanan lokal.
   Future<void> loadThemePreferences() async {

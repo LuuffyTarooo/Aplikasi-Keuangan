@@ -7,8 +7,8 @@ import 'package:aplikasi_keuangan/models/category_model.dart';
 import 'package:aplikasi_keuangan/core/utils/formatters.dart';
 import 'package:aplikasi_keuangan/core/utils/audio_helper.dart';
 import 'package:aplikasi_keuangan/core/utils/haptic_helper.dart';
-import 'package:aplikasi_keuangan/core/utils/wallet_helper.dart';
-import 'package:intl/intl.dart';
+import 'package:aplikasi_keuangan/shared/widgets/wallet_logo_widget.dart';
+
 
 class QuickAddWizardScreen extends StatefulWidget {
   const QuickAddWizardScreen({super.key});
@@ -18,6 +18,13 @@ class QuickAddWizardScreen extends StatefulWidget {
 }
 
 class _QuickAddWizardScreenState extends State<QuickAddWizardScreen> {
+  @override
+  void dispose() {
+    _nominalController.dispose();
+    _catatanController.dispose();
+    super.dispose();
+  }
+
   int _currentStep = 0;
 
   // Transaction Data
@@ -51,17 +58,24 @@ class _QuickAddWizardScreenState extends State<QuickAddWizardScreen> {
     );
     final inputNominal = nominalRaw.isNotEmpty ? double.parse(nominalRaw) : 0.0;
 
+    if (inputNominal <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nominal tidak boleh 0 atau kosong')),
+      );
+      return;
+    }
+
     // Cegah crash jika dompet belum ter-load
-    final fallbackDanaId = finance.mySumberDana.isNotEmpty
-        ? finance.mySumberDana.first.idDana
+    final fallbackDanaId = finance.myActiveWallets.isNotEmpty
+        ? finance.myActiveWallets.first.walletId
         : 'default_wallet';
 
     final newTx = TransactionModel(
       idTransaksi: 'tx_${DateTime.now().millisecondsSinceEpoch}',
       jenis: _jenis,
       nominal: inputNominal,
-      idDana: _idDana ?? fallbackDanaId,
-      idDanaTujuan: _idDanaTujuan,
+      walletId: _idDana ?? fallbackDanaId,
+      targetWalletId: _idDanaTujuan,
       kategori: _jenis == 'Transfer'
           ? 'Transfer'
           : (_selectedKategori?.name ?? 'Lainnya'),
@@ -258,33 +272,33 @@ class _QuickAddWizardScreenState extends State<QuickAddWizardScreen> {
           ),
           const SizedBox(height: 16),
           Column(
-            children: finance.mySumberDana.map((d) {
-              if (!isSumber && d.idDana == _idDana) {
+            children: finance.myActiveWallets.map((d) {
+              if (!isSumber && d.walletId == _idDana) {
                 return const SizedBox(); // Cegah transfer ke dompet yang sama
               }
               return Column(
                 children: [
                   ListTile(
                     contentPadding: EdgeInsets.zero,
-                    leading: WalletHelper.getWalletLogo(d.namaAset, size: 'sm'),
+                    leading: WalletLogoWidget(walletName: d.walletName, size: 'sm'),
                     title: Text(
-                      d.namaAset,
+                      d.walletName,
                       style: TextStyle(color: finance.themeText),
                     ),
                     subtitle: Text(
-                      Formatters.formatCurrency(d.saldoTerkini),
+                      Formatters.formatCurrency(d.currentBalance),
                       style: TextStyle(color: finance.themeTextSub),
                     ),
                     onTap: () {
                       if (isSumber) {
-                        _idDana = d.idDana;
+                        _idDana = d.walletId;
                       } else {
-                        _idDanaTujuan = d.idDana;
+                        _idDanaTujuan = d.walletId;
                       }
                       _nextStep();
                     },
                   ),
-                  if (d != finance.mySumberDana.last)
+                  if (d != finance.myActiveWallets.last)
                     Divider(color: finance.themeBorder, height: 1),
                 ],
               );

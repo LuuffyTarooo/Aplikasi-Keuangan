@@ -20,12 +20,7 @@ class ReminderScreen extends StatefulWidget {
 class _ReminderScreenState extends State<ReminderScreen> {
   String _activeTab = 'SEMUA';
 
-  final List<Map<String, String>> _kategoriList = [
-    {'id': 'def1', 'name': 'Tagihan'},
-    {'id': 'def2', 'name': 'Langganan'},
-    {'id': 'def3', 'name': 'Listrik & Air'},
-    {'id': 'def4', 'name': 'Kosan / Rumah'},
-  ];
+
 
   void _showToast(String message, {bool isError = false, bool isWarning = false}) {
     HapticFeedback.heavyImpact();
@@ -89,10 +84,10 @@ class _ReminderScreenState extends State<ReminderScreen> {
           children: [
             Text("Pilih Dompet", style: TextStyle(color: finance.themeText, fontSize: 18, fontWeight: FontWeight.w900)),
             const SizedBox(height: 16),
-            ...finance.mySumberDana.map((w) => Padding(
+            ...finance.myWallets.map((w) => Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: GestureDetector(
-                onTap: () { onSelect(w.idDana); Navigator.pop(ctx); },
+                onTap: () { onSelect(w.walletId); Navigator.pop(ctx); },
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(16), border: Border.all(color: finance.themeBorder)),
@@ -104,8 +99,8 @@ class _ReminderScreenState extends State<ReminderScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(w.namaAset, style: TextStyle(color: finance.themeText, fontSize: 14, fontWeight: FontWeight.bold)),
-                            Text("Sisa: ${Formatters.formatCurrency(w.saldoTerkini)}", style: TextStyle(color: finance.themeTextSub, fontSize: 12)),
+                            Text(w.walletName, style: TextStyle(color: finance.themeText, fontSize: 14, fontWeight: FontWeight.bold)),
+                            Text("Sisa: ${Formatters.formatCurrency(w.currentBalance)}", style: TextStyle(color: finance.themeTextSub, fontSize: 12)),
                           ],
                         ),
                       ),
@@ -122,7 +117,7 @@ class _ReminderScreenState extends State<ReminderScreen> {
   }
 
   Widget _buildWalletSelector(String selectedId, FinanceProvider finance, VoidCallback onTap) {
-    final dompet = selectedId.isEmpty ? null : finance.mySumberDana.firstWhere((d) => d.idDana == selectedId, orElse: () => finance.mySumberDana.first);
+    final dompet = selectedId.isEmpty ? null : finance.myWallets.firstWhere((d) => d.walletId == selectedId, orElse: () => finance.myWallets.first);
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -136,8 +131,8 @@ class _ReminderScreenState extends State<ReminderScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(dompet == null ? "Pilih Dompet..." : dompet.namaAset, style: TextStyle(color: dompet == null ? finance.themeTextSub : finance.themeText, fontSize: 14, fontWeight: FontWeight.bold)),
-                  if (dompet != null) Text("Sisa: ${Formatters.formatCurrency(dompet.saldoTerkini)}", style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.bold)),
+                  Text(dompet == null ? "Pilih Dompet..." : dompet.walletName, style: TextStyle(color: dompet == null ? finance.themeTextSub : finance.themeText, fontSize: 14, fontWeight: FontWeight.bold)),
+                  if (dompet != null) Text("Sisa: ${Formatters.formatCurrency(dompet.currentBalance)}", style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
@@ -158,7 +153,6 @@ class _ReminderScreenState extends State<ReminderScreen> {
     String formDate = DateTime.now().toIso8601String();
     double formNominal = 0;
     
-    TextEditingController kategoriController = TextEditingController();
 
     showModalBottomSheet(
       context: context,
@@ -188,14 +182,13 @@ class _ReminderScreenState extends State<ReminderScreen> {
                           const SizedBox(height: 8),
                           Wrap(
                             spacing: 8, runSpacing: 8,
-                            children: _kategoriList.map((kat) {
-                              bool isActive = formKategori == kat['name'];
+                            children: finance.expenseCategories.map((kat) {
+                              bool isActive = formKategori == kat.name;
                               return GestureDetector(
                                 onTap: () { 
                                   HapticFeedback.lightImpact(); 
                                   setModalState(() {
-                                    formKategori = kat['name']!;
-                                    kategoriController.text = kat['name']!; 
+                                    formKategori = kat.name;
                                   }); 
                                 },
                                 child: Container(
@@ -205,27 +198,17 @@ class _ReminderScreenState extends State<ReminderScreen> {
                                     borderRadius: BorderRadius.circular(16),
                                     border: Border.all(color: isActive ? finance.themeAccent : finance.themeBorder),
                                   ),
-                                  child: Text(kat['name']!, style: TextStyle(color: isActive ? Colors.white : finance.themeTextSub, fontSize: 12, fontWeight: FontWeight.bold)),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(kat.icon, color: isActive ? Colors.white : finance.themeTextSub, size: 14),
+                                      const SizedBox(width: 6),
+                                      Text(kat.name, style: TextStyle(color: isActive ? Colors.white : finance.themeTextSub, fontSize: 12, fontWeight: FontWeight.bold)),
+                                    ],
+                                  ),
                                 ),
                               );
                             }).toList(),
-                          ),
-                          const SizedBox(height: 12),
-                          TextField(
-                            controller: kategoriController,
-                            onChanged: (val) {
-                              setModalState(() => formKategori = val);
-                            },
-                            style: TextStyle(color: finance.themeText, fontSize: 14, fontWeight: FontWeight.bold),
-                            decoration: InputDecoration(
-                              filled: true, fillColor: finance.themeCard,
-                              hintText: "Atau ketik kategori sendiri...", hintStyle: TextStyle(color: finance.themeTextSub.withValues(alpha:0.5)),
-                              prefixIcon: Icon(Icons.style_rounded, color: finance.themeTextSub),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: finance.themeBorder)),
-                              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: finance.themeBorder)),
-                              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: finance.themeAccent)),
-                            ),
                           ),
                           const SizedBox(height: 24),
 
@@ -421,12 +404,12 @@ class _ReminderScreenState extends State<ReminderScreen> {
                         if (payWallet.isEmpty) return _showToast("Pilih dompet pembayarannya dulu!", isWarning: true);
                         if (payNominal <= 0) return _showToast("Nominal tidak valid!", isError: true);
 
-                        final dompet = finance.mySumberDana.firstWhere((d) => d.idDana == payWallet);
-                        if (dompet.saldoTerkini < payNominal) return _showToast("Saldo ${dompet.namaAset} nggak cukup!", isError: true);
+                        final dompet = finance.myWallets.firstWhere((d) => d.walletId == payWallet);
+                        if (dompet.currentBalance < payNominal) return _showToast("Saldo ${dompet.walletName} nggak cukup!", isError: true);
 
                         finance.handleSaveTransaksi(TransactionModel(
-                          idTransaksi: '', jenis: 'Pengeluaran', nominal: payNominal, idDana: payWallet,
-                          idDanaTujuan: '', kategori: reminder.kategori,
+                          idTransaksi: '', jenis: 'Pengeluaran', nominal: payNominal, walletId: payWallet,
+                          targetWalletId: '', kategori: reminder.kategori,
                           keterangan: payCatatan.isNotEmpty ? payCatatan : "Bayar: ${reminder.title}",
                           tanggal: payTanggal, userId: finance.currentUser!.id,
                         ));

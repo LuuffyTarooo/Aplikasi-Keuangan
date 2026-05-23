@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:aplikasi_keuangan/providers/finance_provider.dart';
 
 class CalculatorNumpad extends StatefulWidget {
   final String initialCatatan;
@@ -165,7 +167,7 @@ class _CalculatorNumpadState extends State<CalculatorNumpad> {
     return "$day $month ${date.year}";
   }
 
-  Future<void> _selectDate() async {
+  Future<void> _selectDate(FinanceProvider finance) async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _tanggal,
@@ -173,7 +175,7 @@ class _CalculatorNumpadState extends State<CalculatorNumpad> {
       lastDate: DateTime(2101),
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
-          colorScheme: const ColorScheme.dark(primary: Color(0xFFA855F7), surface: Color(0xFF161B22)),
+          colorScheme: ColorScheme.dark(primary: finance.themeAccent, surface: finance.themeCard),
         ),
         child: child!,
       ),
@@ -185,15 +187,16 @@ class _CalculatorNumpadState extends State<CalculatorNumpad> {
 
   @override
   Widget build(BuildContext context) {
+    final finance = Provider.of<FinanceProvider>(context);
     final displayString = _formatDisplay();
 
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFF161B22).withValues(alpha:0.95),
+          color: finance.themeBg,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-          border: const Border(top: BorderSide(color: Colors.white10)),
+          border: Border(top: BorderSide(color: finance.themeBorder)),
           boxShadow: [BoxShadow(color: Colors.black.withValues(alpha:0.5), blurRadius: 40, offset: const Offset(0, -10))],
         ),
         child: SingleChildScrollView(
@@ -206,20 +209,20 @@ class _CalculatorNumpadState extends State<CalculatorNumpad> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   GestureDetector(
-                    onTap: _selectDate,
+                    onTap: () => _selectDate(finance),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha:0.05), 
+                        color: finance.themeCard, 
                         borderRadius: BorderRadius.circular(16), 
-                        border: Border.all(color: Colors.white10)
+                        border: Border.all(color: finance.themeBorder)
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.calendar_month_rounded, size: 16, color: Colors.white54),
+                          Icon(Icons.calendar_month_rounded, size: 16, color: finance.themeTextSub),
                           const SizedBox(width: 8),
-                          Text(_getShortIndoDate(_tanggal), style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                          Text(_getShortIndoDate(_tanggal), style: TextStyle(color: finance.themeText, fontSize: 12, fontWeight: FontWeight.bold)),
                         ],
                       ),
                     ),
@@ -230,18 +233,18 @@ class _CalculatorNumpadState extends State<CalculatorNumpad> {
                   Expanded(
                     child: TextField(
                       controller: _catatanController,
-                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: finance.themeText, fontSize: 12, fontWeight: FontWeight.bold),
                       decoration: InputDecoration(
                         filled: true,
-                        fillColor: Colors.white.withValues(alpha: 0.05),
+                        fillColor: finance.themeCard,
                         hintText: "Catatan...",
-                        hintStyle: const TextStyle(color: Colors.white30),
-                        prefixIcon: const Icon(Icons.edit_rounded, size: 16, color: Colors.white54),
+                        hintStyle: TextStyle(color: finance.themeTextSub.withValues(alpha: 0.5)),
+                        prefixIcon: Icon(Icons.edit_rounded, size: 16, color: finance.themeTextSub),
                         prefixIconConstraints: const BoxConstraints(minWidth: 40, minHeight: 40),
                         contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Colors.white10)),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Colors.white10)),
-                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Color(0xFF9333EA))),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: finance.themeBorder)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: finance.themeBorder)),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: finance.themeAccent)),
                       ),
                     ),
                   ),
@@ -259,7 +262,7 @@ class _CalculatorNumpadState extends State<CalculatorNumpad> {
                   alignment: Alignment.centerRight,
                   child: Text(
                     displayString,
-                    style: const TextStyle(color: Colors.white, fontSize: 48, fontWeight: FontWeight.w900, letterSpacing: -1),
+                    style: TextStyle(color: finance.themeText, fontSize: 48, fontWeight: FontWeight.w900, letterSpacing: -1),
                   ),
                 ),
               ),
@@ -274,13 +277,13 @@ class _CalculatorNumpadState extends State<CalculatorNumpad> {
                     flex: 3,
                     child: Column(
                       children: [
-                        Row(children: [ Expanded(child: _buildBtn('7')), const SizedBox(width: 10), Expanded(child: _buildBtn('8')), const SizedBox(width: 10), Expanded(child: _buildBtn('9')) ]),
+                        Row(children: [ Expanded(child: _buildBtn('7', finance)), const SizedBox(width: 10), Expanded(child: _buildBtn('8', finance)), const SizedBox(width: 10), Expanded(child: _buildBtn('9', finance)) ]),
                         const SizedBox(height: 10),
-                        Row(children: [ Expanded(child: _buildBtn('4')), const SizedBox(width: 10), Expanded(child: _buildBtn('5')), const SizedBox(width: 10), Expanded(child: _buildBtn('6')) ]),
+                        Row(children: [ Expanded(child: _buildBtn('4', finance)), const SizedBox(width: 10), Expanded(child: _buildBtn('5', finance)), const SizedBox(width: 10), Expanded(child: _buildBtn('6', finance)) ]),
                         const SizedBox(height: 10),
-                        Row(children: [ Expanded(child: _buildBtn('1')), const SizedBox(width: 10), Expanded(child: _buildBtn('2')), const SizedBox(width: 10), Expanded(child: _buildBtn('3')) ]),
+                        Row(children: [ Expanded(child: _buildBtn('1', finance)), const SizedBox(width: 10), Expanded(child: _buildBtn('2', finance)), const SizedBox(width: 10), Expanded(child: _buildBtn('3', finance)) ]),
                         const SizedBox(height: 10),
-                        Row(children: [ Expanded(child: _buildBtn('0')), const SizedBox(width: 10), Expanded(child: _buildBtn('000', fontSize: 18)), const SizedBox(width: 10), Expanded(child: _buildBtn('+', isOp: true)) ]),
+                        Row(children: [ Expanded(child: _buildBtn('0', finance)), const SizedBox(width: 10), Expanded(child: _buildBtn('000', finance, fontSize: 18)), const SizedBox(width: 10), Expanded(child: _buildBtn('+', finance, isOp: true)) ]),
                       ],
                     ),
                   ),
@@ -290,11 +293,11 @@ class _CalculatorNumpadState extends State<CalculatorNumpad> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch, 
                       children: [
-                        _buildBtn('DEL', isDel: true),
+                        _buildBtn('DEL', finance, isDel: true),
                         const SizedBox(height: 10),
-                        _buildBtn('-', isOp: true),
+                        _buildBtn('-', finance, isOp: true),
                         const SizedBox(height: 10),
-                        _buildBtn('OK', isSubmit: true),
+                        _buildBtn('OK', finance, isSubmit: true),
                       ],
                     ),
                   )
@@ -307,21 +310,21 @@ class _CalculatorNumpadState extends State<CalculatorNumpad> {
     );
   }
 
-  Widget _buildBtn(String label, {bool isOp = false, bool isDel = false, bool isSubmit = false, double fontSize = 24}) {
-    Color bgColor = Colors.white.withValues(alpha:0.05);
-    Color textColor = Colors.white;
-    Border border = Border.all(color: Colors.white10);
+  Widget _buildBtn(String label, FinanceProvider finance, {bool isOp = false, bool isDel = false, bool isSubmit = false, double fontSize = 24}) {
+    Color bgColor = finance.themeCard;
+    Color textColor = finance.themeText;
+    Border border = Border.all(color: finance.themeBorder);
     double height = 56;
 
     if (isSubmit) {
-      bgColor = const Color(0xFF9333EA);
-      textColor = Colors.white;
-      border = Border.all(color: const Color(0xFF9333EA).withValues(alpha:0.5));
+      bgColor = finance.themeAccent;
+      textColor = Colors.black;
+      border = Border.all(color: finance.themeAccent.withValues(alpha:0.5));
       height = 56 * 2 + 10; 
     } else if (isDel) {
       textColor = Colors.pinkAccent;
     } else if (isOp) {
-      textColor = const Color(0xFFA855F7);
+      textColor = finance.themeAccent;
     }
 
     return GestureDetector(
@@ -341,7 +344,7 @@ class _CalculatorNumpadState extends State<CalculatorNumpad> {
         child: isDel
             ? const Icon(Icons.backspace_rounded, color: Colors.pinkAccent)
             : isSubmit
-                ? const Icon(Icons.check_rounded, color: Colors.white, size: 32)
+                ? const Icon(Icons.check_rounded, color: Colors.black, size: 32)
                 : Text(label, style: TextStyle(color: textColor, fontSize: fontSize, fontWeight: FontWeight.w900)),
       ),
     );

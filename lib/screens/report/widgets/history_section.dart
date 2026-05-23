@@ -7,7 +7,8 @@ import 'package:intl/intl.dart';
 import 'package:aplikasi_keuangan/providers/finance_provider.dart';
 import 'package:aplikasi_keuangan/models/transaction_model.dart';
 import 'package:aplikasi_keuangan/core/utils/formatters.dart';
-import 'package:aplikasi_keuangan/core/utils/wallet_helper.dart';
+import 'package:aplikasi_keuangan/core/utils/wallet_logo_resolver.dart';
+import 'package:aplikasi_keuangan/shared/widgets/wallet_logo_widget.dart';
 import 'package:aplikasi_keuangan/shared/widgets/custom_button.dart';
 import 'package:aplikasi_keuangan/shared/bottom_sheets/transaction_detail_sheet.dart';
 import 'package:aplikasi_keuangan/screens/transaction/transaction_form_screen.dart';
@@ -30,9 +31,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
   String _searchQuery = '';
   String _filterJenis = 'Semua';
   String _filterDana = 'Semua';
+  String _filterKategori = 'Semua';
   String _filterSort = 'Terbaru';
 
-  bool get _isFilterActive => _filterJenis != 'Semua' || _filterDana != 'Semua' || _filterSort != 'Terbaru';
+  bool get _isFilterActive => _filterJenis != 'Semua' || _filterDana != 'Semua' || _filterKategori != 'Semua' || _filterSort != 'Terbaru';
 
   @override
   void initState() {
@@ -170,7 +172,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }
 
     if (_filterJenis != 'Semua') result = result.where((t) => t.jenis == _filterJenis).toList();
-    if (_filterDana != 'Semua') result = result.where((t) => t.idDana == _filterDana).toList();
+    if (_filterDana != 'Semua') result = result.where((t) => t.walletId == _filterDana).toList();
+    if (_filterKategori != 'Semua') result = result.where((t) => t.kategori == _filterKategori).toList();
 
     return result;
   }
@@ -197,7 +200,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   void _openFilterModal(FinanceProvider finance) {
     HapticFeedback.mediumImpact();
-    String tempJenis = _filterJenis; String tempDana = _filterDana; String tempSort = _filterSort;
+    String tempJenis = _filterJenis; String tempDana = _filterDana; String tempKategori = _filterKategori; String tempSort = _filterSort;
 
     showModalBottomSheet(
       context: context, isScrollControlled: true, backgroundColor: Colors.transparent,
@@ -225,12 +228,54 @@ class _HistoryScreenState extends State<HistoryScreen> {
                             children: ['Semua', 'Pengeluaran', 'Pemasukan', 'Transfer'].map((j) {
                               bool isActive = tempJenis == j;
                               return GestureDetector(
-                                onTap: () { HapticFeedback.lightImpact(); setModalState(() => tempJenis = j); },
+                                onTap: () { 
+                                  HapticFeedback.lightImpact(); 
+                                  setModalState(() {
+                                    tempJenis = j; 
+                                    if (j == 'Semua' || j == 'Transfer') {
+                                      tempKategori = 'Semua';
+                                    } else if (j == 'Pengeluaran') {
+                                      if (!finance.expenseCategories.any((c) => c.name == tempKategori)) tempKategori = 'Semua';
+                                    } else if (j == 'Pemasukan') {
+                                      if (!finance.incomeCategories.any((c) => c.name == tempKategori)) tempKategori = 'Semua';
+                                    }
+                                  }); 
+                                },
                                 child: Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), decoration: BoxDecoration(color: isActive ? finance.themeAccent : finance.themeCard, borderRadius: BorderRadius.circular(12), border: Border.all(color: isActive ? finance.themeAccent : finance.themeBorder)), child: Row(mainAxisSize: MainAxisSize.min, children: [if (isActive) const Padding(padding: EdgeInsets.only(right: 6), child: Icon(Icons.check_rounded, color: Colors.white, size: 14)), Text(j, style: TextStyle(color: isActive ? Colors.white : finance.themeTextSub, fontSize: 12, fontWeight: FontWeight.bold))])),
                               );
                             }).toList(),
                           ),
                           const SizedBox(height: 24),
+
+                          if (tempJenis == 'Pengeluaran' || tempJenis == 'Pemasukan') ...[
+                            Text("KATEGORI", style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                            const SizedBox(height: 12),
+                            Wrap(
+                              spacing: 8, runSpacing: 8,
+                              children: [
+                                GestureDetector(
+                                  onTap: () { HapticFeedback.lightImpact(); setModalState(() => tempKategori = 'Semua'); }, 
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), 
+                                    decoration: BoxDecoration(color: tempKategori == 'Semua' ? finance.themeAccent : finance.themeCard, borderRadius: BorderRadius.circular(12), border: Border.all(color: tempKategori == 'Semua' ? finance.themeAccent : finance.themeBorder)), 
+                                    child: Text("Semua", style: TextStyle(color: tempKategori == 'Semua' ? Colors.white : finance.themeTextSub, fontSize: 12, fontWeight: FontWeight.bold))
+                                  )
+                                ),
+                                ...(tempJenis == 'Pengeluaran' ? finance.expenseCategories : finance.incomeCategories).map((kat) {
+                                  bool isActive = tempKategori == kat.name;
+                                  return GestureDetector(
+                                    onTap: () { HapticFeedback.lightImpact(); setModalState(() => tempKategori = kat.name); }, 
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), 
+                                      decoration: BoxDecoration(color: isActive ? finance.themeAccent : finance.themeCard, borderRadius: BorderRadius.circular(12), border: Border.all(color: isActive ? finance.themeAccent : finance.themeBorder)), 
+                                      child: Text(kat.name, style: TextStyle(color: isActive ? Colors.white : finance.themeTextSub, fontSize: 12, fontWeight: FontWeight.bold))
+                                    )
+                                  );
+                                }),
+                              ],
+                            ),
+                            const SizedBox(height: 24),
+                          ],
 
                           Text("SUMBER DANA", style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
                           const SizedBox(height: 12),
@@ -238,9 +283,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
                             spacing: 8, runSpacing: 8,
                             children: [
                               GestureDetector(onTap: () { HapticFeedback.lightImpact(); setModalState(() => tempDana = 'Semua'); }, child: Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), decoration: BoxDecoration(color: tempDana == 'Semua' ? finance.themeAccent : finance.themeCard, borderRadius: BorderRadius.circular(12), border: Border.all(color: tempDana == 'Semua' ? finance.themeAccent : finance.themeBorder)), child: Text("Semua", style: TextStyle(color: tempDana == 'Semua' ? Colors.white : finance.themeTextSub, fontSize: 12, fontWeight: FontWeight.bold)))),
-                              ...finance.mySumberDana.map((d) {
-                                bool isActive = tempDana == d.idDana;
-                                return GestureDetector(onTap: () { HapticFeedback.lightImpact(); setModalState(() => tempDana = d.idDana); }, child: Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), decoration: BoxDecoration(color: isActive ? finance.themeAccent : finance.themeCard, borderRadius: BorderRadius.circular(12), border: Border.all(color: isActive ? finance.themeAccent : finance.themeBorder)), child: Text(d.namaAset, style: TextStyle(color: isActive ? Colors.white : finance.themeTextSub, fontSize: 12, fontWeight: FontWeight.bold))));
+                              ...finance.myWallets.map((d) {
+                                bool isActive = tempDana == d.walletId;
+                                return GestureDetector(onTap: () { HapticFeedback.lightImpact(); setModalState(() => tempDana = d.walletId); }, child: Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), decoration: BoxDecoration(color: isActive ? finance.themeAccent : finance.themeCard, borderRadius: BorderRadius.circular(12), border: Border.all(color: isActive ? finance.themeAccent : finance.themeBorder)), child: Text(d.walletName, style: TextStyle(color: isActive ? Colors.white : finance.themeTextSub, fontSize: 12, fontWeight: FontWeight.bold))));
                               }),
                             ],
                           ),
@@ -263,9 +308,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     padding: const EdgeInsets.only(top: 16),
                     child: Row(
                       children: [
-                        Expanded(flex: 1, child: CustomButton(text: "Reset", variant: ButtonVariant.secondary, onPressed: () { HapticFeedback.lightImpact(); setModalState(() { tempJenis = 'Semua'; tempDana = 'Semua'; tempSort = 'Terbaru'; }); })),
+                        Expanded(flex: 1, child: CustomButton(text: "Reset", variant: ButtonVariant.secondary, onPressed: () { HapticFeedback.lightImpact(); setModalState(() { tempJenis = 'Semua'; tempDana = 'Semua'; tempKategori = 'Semua'; tempSort = 'Terbaru'; }); })),
                         const SizedBox(width: 12),
-                        Expanded(flex: 2, child: CustomButton(text: "Terapkan", variant: ButtonVariant.primary, onPressed: () { HapticFeedback.heavyImpact(); setState(() { _filterJenis = tempJenis; _filterDana = tempDana; _filterSort = tempSort; }); Navigator.pop(context); })),
+                        Expanded(flex: 2, child: CustomButton(text: "Terapkan", variant: ButtonVariant.primary, onPressed: () { HapticFeedback.heavyImpact(); setState(() { _filterJenis = tempJenis; _filterDana = tempDana; _filterKategori = tempKategori; _filterSort = tempSort; }); Navigator.pop(context); })),
                       ],
                     ),
                   ),
@@ -309,274 +354,284 @@ class _HistoryScreenState extends State<HistoryScreen> {
             ),
 
             Expanded(
-              child: SingleChildScrollView(
+              child: CustomScrollView(
                 physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Container(
-                            height: 48,
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(16), border: Border.all(color: finance.themeBorder)),
-                            child: DropdownButtonHideUnderline(
-                              child: DropdownButton<String>(
-                                value: _activeMode,
-                                icon: Padding(padding: const EdgeInsets.only(left: 4), child: Icon(Icons.keyboard_arrow_down_rounded, color: finance.themeTextSub, size: 16)),
-                                dropdownColor: finance.themeCard,
-                                style: TextStyle(color: finance.themeText, fontSize: 13, fontWeight: FontWeight.bold),
-                                items: ['Harian', 'Mingguan', 'Bulanan', 'All Time', 'Rentang'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-                                onChanged: (val) {
-                                  if (val != null) {
-                                    HapticFeedback.lightImpact();
-                                    setState(() {
-                                      _activeMode = val;
-                                    });
-                                    if (val == 'Rentang') {
-                                      _pickDateRange(finance);
-                                    }
-                                  }
-                                }
-                              ),
-                            ),
-                          ),
-                        ),
-                        
-                        const SizedBox(width: 12),
-
-                        Expanded(
-                          child: Container(
-                            height: 48, 
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(16), border: Border.all(color: finance.themeBorder)),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                GestureDetector(
-                                  onTap: disableArrows ? null : () => _changeDate(-1, finance), 
-                                  child: Padding(padding: const EdgeInsets.all(4), child: Icon(Icons.chevron_left_rounded, color: disableArrows ? finance.themeTextSub.withValues(alpha:0.3) : finance.themeText, size: 18))
-                                ),
-                                GestureDetector(
-                                  onTap: _activeMode == 'Rentang' ? () => _pickDateRange(finance) : null,
-                                  child: FittedBox(
-                                    fit: BoxFit.scaleDown,
-                                    child: Text(_navLabel, style: TextStyle(color: finance.themeText, fontSize: 12, fontWeight: FontWeight.bold)),
+                slivers: [
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    sliver: SliverToBoxAdapter(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Container(
+                                  height: 48,
+                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(16), border: Border.all(color: finance.themeBorder)),
+                                  child: DropdownButtonHideUnderline(
+                                    child: DropdownButton<String>(
+                                      value: _activeMode,
+                                      icon: Padding(padding: const EdgeInsets.only(left: 4), child: Icon(Icons.keyboard_arrow_down_rounded, color: finance.themeTextSub, size: 16)),
+                                      dropdownColor: finance.themeCard,
+                                      style: TextStyle(color: finance.themeText, fontSize: 13, fontWeight: FontWeight.bold),
+                                      items: ['Harian', 'Mingguan', 'Bulanan', 'All Time', 'Rentang'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                                      onChanged: (val) {
+                                        if (val != null) {
+                                          HapticFeedback.lightImpact();
+                                          setState(() {
+                                            _activeMode = val;
+                                          });
+                                          if (val == 'Rentang') {
+                                            _pickDateRange(finance);
+                                          }
+                                        }
+                                      }
+                                    ),
                                   ),
                                 ),
-                                GestureDetector(
-                                  onTap: disableArrows ? null : () => _changeDate(1, finance), 
-                                  child: Padding(padding: const EdgeInsets.all(4), child: Icon(Icons.chevron_right_rounded, color: disableArrows ? finance.themeTextSub.withValues(alpha:0.3) : finance.themeText, size: 18))
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
+                              ),
+                              
+                              const SizedBox(width: 12),
 
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(16), border: Border.all(color: finance.themeBorder)),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(children: [Icon(Icons.arrow_upward_rounded, size: 12, color: Colors.redAccent), const SizedBox(width: 4), Text("Keluar", style: TextStyle(color: Colors.redAccent, fontSize: 11, fontWeight: FontWeight.bold))]),
-                                const SizedBox(height: 8),
-                                FittedBox(fit: BoxFit.scaleDown, child: Text(Formatters.formatCurrency(totalExp), style: const TextStyle(color: Colors.redAccent, fontSize: 16, fontWeight: FontWeight.w900))),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(16), border: Border.all(color: finance.themeBorder)),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(children: [Icon(Icons.arrow_downward_rounded, size: 12, color: Colors.greenAccent), const SizedBox(width: 4), Text("Masuk", style: TextStyle(color: Colors.greenAccent, fontSize: 11, fontWeight: FontWeight.bold))]),
-                                const SizedBox(height: 8),
-                                FittedBox(fit: BoxFit.scaleDown, child: Text(Formatters.formatCurrency(totalInc), style: const TextStyle(color: Colors.greenAccent, fontSize: 16, fontWeight: FontWeight.w900))),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            onChanged: (val) => setState(() => _searchQuery = val),
-                            style: TextStyle(color: finance.themeText, fontSize: 14, fontWeight: FontWeight.w600),
-                            decoration: InputDecoration(
-                              filled: true, fillColor: finance.themeCard, 
-                              hintText: "Cari transaksi...", hintStyle: TextStyle(color: finance.themeTextSub.withValues(alpha:0.5)),
-                              contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                              prefixIcon: Icon(Icons.search_rounded, color: finance.themeTextSub, size: 20),
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        GestureDetector(
-                          onTap: () => _openFilterModal(finance),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                            decoration: BoxDecoration(color: _isFilterActive ? finance.themeAccent.withValues(alpha:0.1) : finance.themeCard, borderRadius: BorderRadius.circular(16), border: Border.all(color: _isFilterActive ? finance.themeAccent : Colors.transparent)),
-                            child: Row(
-                              children: [
-                                Icon(Icons.filter_list_rounded, color: _isFilterActive ? finance.themeAccent : finance.themeTextSub, size: 20),
-                                const SizedBox(width: 6),
-                                Text("Filter", style: TextStyle(color: _isFilterActive ? finance.themeAccent : finance.themeTextSub, fontWeight: FontWeight.bold, fontSize: 13)),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-
-                    if (groupedData.isEmpty)
-                      Container(
-                        width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
-                        decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(24), border: Border.all(color: finance.themeBorder, style: BorderStyle.solid)),
-                        child: Column(
-                          children: [
-                            Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: finance.themeBg, shape: BoxShape.circle), child: Icon(Icons.receipt_long_rounded, color: finance.themeTextSub, size: 32)),
-                            const SizedBox(height: 16),
-                            Text("Gak ada riwayat jajan", style: TextStyle(color: finance.themeText, fontSize: 16, fontWeight: FontWeight.w900)),
-                            const SizedBox(height: 8),
-                            Text(_searchQuery.isNotEmpty || _isFilterActive ? "Filter kamu nggak nemu hasil." : "Belum ada transaksi di periode ini.", style: TextStyle(color: finance.themeTextSub, fontSize: 12), textAlign: TextAlign.center),
-                          ],
-                        ),
-                      )
-                    else
-                      ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        padding: EdgeInsets.zero, 
-                        itemCount: groupedData.length,
-                        itemBuilder: (context, index) {
-                          final group = groupedData[index];
-                          String dateStr = group.key;
-                          List<TransactionModel> items = group.value;
-
-                          DateTime parsedDate = DateTime.parse(dateStr);
-                          String displayDate = "${parsedDate.day} ${Formatters.monthNames[parsedDate.month - 1]} ${parsedDate.year}";
-
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 24),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.only(bottom: 12),
-                                  child: Text(displayDate.toUpperCase(), style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: finance.themeTextSub, letterSpacing: 1.5)),
-                                ),
-
-                                // 🟢 FIX LIST ITEM: DISAMAIN SAMA DASHBOARD!
-                                ...items.map((tx) {
-                                  final dompet = finance.mySumberDana.firstWhere((d) => d.idDana == tx.idDana, orElse: () => finance.mySumberDana.first);
-                                  String dompetName = dompet.namaAset;
-
-                                  bool isIncome = tx.jenis == 'Pemasukan';
-                                  bool isTransfer = tx.jenis == 'Transfer';
-
-                                  final katModel = finance.getCategoryByName(tx.kategori);
-
-                                  Color iconColor = katModel.accentColor;
-                                  Color iconBg = katModel.bgColor;
-                                  IconData iconData = katModel.icon;
-                                  String prefix = isIncome ? '+' : '-';
-
-                                  if (isTransfer) {
-                                    iconColor = finance.themeAccent;
-                                    iconBg = finance.themeAccent.withValues(alpha:0.2);
-                                    iconData = Icons.sync_alt_rounded;
-                                    prefix = '-';
-                                  }
-
-                                  String displayKet = tx.keterangan.isEmpty ? 'Tanpa Keterangan' : tx.keterangan;
-                                  if (isTransfer && displayKet.toLowerCase() == 'pemasukan') displayKet = 'Pindah Saldo';
-
-                                  return Padding(
-                                    padding: const EdgeInsets.only(bottom: 12),
-                                    child: GestureDetector(
-                                      onTap: () {
-                                        HapticFeedback.lightImpact();
-                                        TransactionDetailSheet.show(
-                                          context: context, transaction: tx, sumberDana: finance.mySumberDana,
-                                          onEdit: (selectedTx) { Navigator.push(context, MaterialPageRoute(builder: (_) => TransactionFormScreen(initialData: selectedTx))); },
-                                          onDelete: (selectedTx) {
-                                            finance.deleteTransaksi(selectedTx.idTransaksi);
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              const SnackBar(
-                                                content: Text('Transaksi berhasil dihapus'),
-                                                backgroundColor: Colors.green,
-                                                behavior: SnackBarBehavior.floating,
-                                              ),
-                                            );
-                                          },
-                                        );
-                                      },
-                                      child: Container( 
-                                        padding: const EdgeInsets.all(12),
-                                        decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(16), border: Border.all(color: finance.themeBorder)),
-                                        child: Row(
-                                          children: [
-                                            Container(width: 48, height: 48, decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(16), border: Border.all(color: iconColor.withValues(alpha:0.2))), child: Icon(iconData, color: iconColor, size: 24)),
-                                            const SizedBox(width: 16),
-                                            
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  Text((tx.kategori.isEmpty ? tx.jenis : tx.kategori).toUpperCase(), style: TextStyle(color: finance.themeText, fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 0.5)),
-                                                  const SizedBox(height: 4),
-                                                  Text(displayKet, style: TextStyle(color: finance.themeTextSub, fontWeight: FontWeight.bold, fontSize: 11), maxLines: 1, overflow: TextOverflow.ellipsis),
-                                                ],
-                                              ),
-                                            ),
-                                            
-                                            Column(
-                                              crossAxisAlignment: CrossAxisAlignment.end,
-                                              children: [
-                                                Text("$prefix${Formatters.formatCurrency(tx.nominal)}", style: TextStyle(color: isIncome ? Colors.greenAccent : (isTransfer ? finance.themeAccent : finance.themeText), fontWeight: FontWeight.w900, fontSize: 14)),
-                                                const SizedBox(height: 6),
-                                                Row(
-                                                  children: [
-                                                    WalletHelper.getWalletLogo(dompetName, size: 'sm'),
-                                                    const SizedBox(width: 4),
-                                                    Text(dompetName, style: TextStyle(color: finance.themeTextSub, fontWeight: FontWeight.bold, fontSize: 10)),
-                                                  ],
-                                                ),
-                                              ],
-                                            ),
-                                          ],
+                              Expanded(
+                                child: Container(
+                                  height: 48, 
+                                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                                  decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(16), border: Border.all(color: finance.themeBorder)),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      GestureDetector(
+                                        onTap: disableArrows ? null : () => _changeDate(-1, finance), 
+                                        child: Padding(padding: const EdgeInsets.all(4), child: Icon(Icons.chevron_left_rounded, color: disableArrows ? finance.themeTextSub.withValues(alpha:0.3) : finance.themeText, size: 18))
+                                      ),
+                                      GestureDetector(
+                                        onTap: _activeMode == 'Rentang' ? () => _pickDateRange(finance) : null,
+                                        child: FittedBox(
+                                          fit: BoxFit.scaleDown,
+                                          child: Text(_navLabel, style: TextStyle(color: finance.themeText, fontSize: 12, fontWeight: FontWeight.bold)),
                                         ),
                                       ),
-                                    ),
-                                  );
-                                }),
-                              ],
+                                      GestureDetector(
+                                        onTap: disableArrows ? null : () => _changeDate(1, finance), 
+                                        child: Padding(padding: const EdgeInsets.all(4), child: Icon(Icons.chevron_right_rounded, color: disableArrows ? finance.themeTextSub.withValues(alpha:0.3) : finance.themeText, size: 18))
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(16), border: Border.all(color: finance.themeBorder)),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(children: [Icon(Icons.arrow_upward_rounded, size: 12, color: Colors.redAccent), const SizedBox(width: 4), Text("Keluar", style: TextStyle(color: Colors.redAccent, fontSize: 11, fontWeight: FontWeight.bold))]),
+                                      const SizedBox(height: 8),
+                                      FittedBox(fit: BoxFit.scaleDown, child: Text(Formatters.formatCurrency(totalExp), style: const TextStyle(color: Colors.redAccent, fontSize: 16, fontWeight: FontWeight.w900))),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(16), border: Border.all(color: finance.themeBorder)),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(children: [Icon(Icons.arrow_downward_rounded, size: 12, color: Colors.greenAccent), const SizedBox(width: 4), Text("Masuk", style: TextStyle(color: Colors.greenAccent, fontSize: 11, fontWeight: FontWeight.bold))]),
+                                      const SizedBox(height: 8),
+                                      FittedBox(fit: BoxFit.scaleDown, child: Text(Formatters.formatCurrency(totalInc), style: const TextStyle(color: Colors.greenAccent, fontSize: 16, fontWeight: FontWeight.w900))),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  onChanged: (val) => setState(() => _searchQuery = val),
+                                  style: TextStyle(color: finance.themeText, fontSize: 14, fontWeight: FontWeight.w600),
+                                  decoration: InputDecoration(
+                                    filled: true, fillColor: finance.themeCard, 
+                                    hintText: "Cari transaksi...", hintStyle: TextStyle(color: finance.themeTextSub.withValues(alpha:0.5)),
+                                    contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                                    prefixIcon: Icon(Icons.search_rounded, color: finance.themeTextSub, size: 20),
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              GestureDetector(
+                                onTap: () => _openFilterModal(finance),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                  decoration: BoxDecoration(color: _isFilterActive ? finance.themeAccent.withValues(alpha:0.1) : finance.themeCard, borderRadius: BorderRadius.circular(16), border: Border.all(color: _isFilterActive ? finance.themeAccent : Colors.transparent)),
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.filter_list_rounded, color: _isFilterActive ? finance.themeAccent : finance.themeTextSub, size: 20),
+                                      const SizedBox(width: 6),
+                                      Text("Filter", style: TextStyle(color: _isFilterActive ? finance.themeAccent : finance.themeTextSub, fontWeight: FontWeight.bold, fontSize: 13)),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+
+                          if (groupedData.isEmpty)
+                            Container(
+                              width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+                              decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(24), border: Border.all(color: finance.themeBorder, style: BorderStyle.solid)),
+                              child: Column(
+                                children: [
+                                  Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: finance.themeBg, shape: BoxShape.circle), child: Icon(Icons.receipt_long_rounded, color: finance.themeTextSub, size: 32)),
+                                  const SizedBox(height: 16),
+                                  Text("Gak ada riwayat jajan", style: TextStyle(color: finance.themeText, fontSize: 16, fontWeight: FontWeight.w900)),
+                                  const SizedBox(height: 8),
+                                  Text(_searchQuery.isNotEmpty || _isFilterActive ? "Filter kamu nggak nemu hasil." : "Belum ada transaksi di periode ini.", style: TextStyle(color: finance.themeTextSub, fontSize: 12), textAlign: TextAlign.center),
+                                ],
+                              ),
                             ),
-                          );
-                        },
+                        ],
                       ),
-                  ],
-                ),
+                    ),
+                  ),
+
+                  if (groupedData.isNotEmpty)
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            final group = groupedData[index];
+                            String dateStr = group.key;
+                            List<TransactionModel> items = group.value;
+
+                            DateTime parsedDate = DateTime.parse(dateStr);
+                            String displayDate = "${parsedDate.day} ${Formatters.monthNames[parsedDate.month - 1]} ${parsedDate.year}";
+
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 24),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 12),
+                                    child: Text(displayDate.toUpperCase(), style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: finance.themeTextSub, letterSpacing: 1.5)),
+                                  ),
+
+                                  // 🟢 FIX LIST ITEM: DISAMAIN SAMA DASHBOARD!
+                                  ...items.map((tx) {
+                                    final dompet = finance.myWallets.firstWhere((d) => d.walletId == tx.walletId, orElse: () => finance.myWallets.first);
+                                    String dompetName = dompet.walletName;
+
+                                    bool isIncome = tx.jenis == 'Pemasukan';
+                                    bool isTransfer = tx.jenis == 'Transfer';
+
+                                    final katModel = finance.getCategoryByName(tx.kategori);
+
+                                    Color iconColor = katModel.accentColor;
+                                    Color iconBg = katModel.bgColor;
+                                    IconData iconData = katModel.icon;
+                                    String prefix = isIncome ? '+' : '-';
+
+                                    if (isTransfer) {
+                                      iconColor = finance.themeAccent;
+                                      iconBg = finance.themeAccent.withValues(alpha:0.2);
+                                      iconData = Icons.sync_alt_rounded;
+                                      prefix = '-';
+                                    }
+
+                                    String displayKet = tx.keterangan.isEmpty ? 'Tanpa Keterangan' : tx.keterangan;
+                                    if (isTransfer && displayKet.toLowerCase() == 'pemasukan') displayKet = 'Pindah Saldo';
+
+                                    return Padding(
+                                      padding: const EdgeInsets.only(bottom: 12),
+                                      child: GestureDetector(
+                                        onTap: () {
+                                          HapticFeedback.lightImpact();
+                                          TransactionDetailSheet.show(
+                                            context: context, transaction: tx, sumberDana: finance.myWallets,
+                                            onEdit: (selectedTx) { Navigator.push(context, MaterialPageRoute(builder: (_) => TransactionFormScreen(initialData: selectedTx))); },
+                                            onDelete: (selectedTx) {
+                                              finance.deleteTransaksi(selectedTx.idTransaksi);
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                const SnackBar(
+                                                  content: Text('Transaksi berhasil dihapus'),
+                                                  backgroundColor: Colors.green,
+                                                  behavior: SnackBarBehavior.floating,
+                                                ),
+                                              );
+                                            },
+                                          );
+                                        },
+                                        child: Container( 
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(16), border: Border.all(color: finance.themeBorder)),
+                                          child: Row(
+                                            children: [
+                                              Container(width: 48, height: 48, decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(16), border: Border.all(color: iconColor.withValues(alpha:0.2))), child: Icon(iconData, color: iconColor, size: 24)),
+                                              const SizedBox(width: 16),
+                                              
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text((tx.kategori.isEmpty ? tx.jenis : tx.kategori).toUpperCase(), style: TextStyle(color: finance.themeText, fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 0.5)),
+                                                    const SizedBox(height: 4),
+                                                    Text(displayKet, style: TextStyle(color: finance.themeTextSub, fontWeight: FontWeight.bold, fontSize: 11), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                                  ],
+                                                ),
+                                              ),
+                                              
+                                              Column(
+                                                crossAxisAlignment: CrossAxisAlignment.end,
+                                                children: [
+                                                  Text("$prefix${Formatters.formatCurrency(tx.nominal)}", style: TextStyle(color: isIncome ? Colors.greenAccent : (isTransfer ? finance.themeAccent : finance.themeText), fontWeight: FontWeight.w900, fontSize: 14)),
+                                                  const SizedBox(height: 6),
+                                                  Row(
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    children: [
+                                                      WalletLogoWidget(walletName: dompetName, size: 'sm'),
+                                                      if (!WalletLogoResolver.hasLogo(dompetName)) const SizedBox(width: 4),
+                                                      if (!WalletLogoResolver.hasLogo(dompetName)) Text(dompetName, style: TextStyle(color: finance.themeTextSub, fontWeight: FontWeight.bold, fontSize: 10)),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  }),
+                                ],
+                              ),
+                            );
+                          },
+                          childCount: groupedData.length,
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
           ],

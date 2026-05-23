@@ -6,7 +6,9 @@ import 'package:intl/intl.dart';
 
 import 'package:aplikasi_keuangan/providers/finance_provider.dart';
 import 'package:aplikasi_keuangan/core/utils/formatters.dart';
-import 'package:aplikasi_keuangan/core/utils/wallet_helper.dart';
+import 'package:aplikasi_keuangan/core/utils/wallet_logo_resolver.dart';
+import 'package:aplikasi_keuangan/shared/widgets/wallet_logo_widget.dart';
+import 'package:aplikasi_keuangan/shared/bottom_sheets/add_wallet_sheet.dart';
 import 'package:aplikasi_keuangan/models/transaction_model.dart';
 import 'package:aplikasi_keuangan/models/wallet_model.dart'; 
 import 'package:aplikasi_keuangan/screens/report/widgets/history_section.dart';// 🟢 FIX: Import Layar History
@@ -30,8 +32,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final finance = Provider.of<FinanceProvider>(context);
-    List<WalletModel> activeWallets = finance.mySumberDana.where((w) => w.isActive).toList();
-    double totalSaldo = activeWallets.fold(0, (sum, item) => sum + item.saldoTerkini);
+    List<WalletModel> activeWallets = finance.myWallets.where((w) => w.isActive).toList();
+    double totalSaldo = activeWallets.fold(0, (sum, item) => sum + item.currentBalance);
 
     return Scaffold(
       backgroundColor: finance.themeBg, // 🟢 AUTO-SYNC: Latar Belakang Solid
@@ -104,51 +106,94 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
             const SizedBox(height: 24),
 
-            // ================= HORIZONTAL WALLET LIST =================
-            SizedBox(
-              height: 85, 
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                scrollDirection: Axis.horizontal,
-                physics: const BouncingScrollPhysics(),
-                itemCount: activeWallets.length, 
-                itemBuilder: (context, index) {
-                  final wallet = activeWallets[index];
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: GestureDetector(
-                      onTap: () { HapticFeedback.lightImpact(); widget.onNavigate('wallets'); },
-                      child: Container( // 🟢 FIX: GlassCard diubah jadi Container solid
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10), 
-                        width: 115, 
-                        decoration: BoxDecoration(
-                          color: finance.themeCard,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: finance.themeBorder),
+            // ================= HORIZONTAL WALLET LIST ATAU KONDISI KOSONG =================
+            if (activeWallets.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: GestureDetector(
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    AddWalletSheet.show(context, finance);
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    decoration: BoxDecoration(
+                      color: finance.themeCard,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: finance.themeAccent, width: 1.5),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: finance.themeAccent.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(Icons.add_rounded, color: finance.themeAccent, size: 32),
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                WalletHelper.getWalletLogo(wallet.namaAset, size: 'sm'),
-                                const SizedBox(width: 8),
-                                Expanded(child: Text(wallet.namaAset.toUpperCase(), style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: finance.themeTextSub, overflow: TextOverflow.ellipsis))),
-                              ],
-                            ),
-                            FittedBox(
-                              fit: BoxFit.scaleDown, alignment: Alignment.centerLeft,
-                              child: Text(Formatters.formatCurrency(wallet.saldoTerkini, isHidden: !_showBalance), style: TextStyle(color: finance.themeText, fontWeight: FontWeight.w900, fontSize: 13)),
-                            ),
-                          ],
+                        const SizedBox(height: 12),
+                        Text(
+                          "Tambah Dompet Pertama",
+                          style: TextStyle(color: finance.themeText, fontWeight: FontWeight.w900, fontSize: 14),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          "Pilih bank atau e-wallet untuk mulai mencatat.",
+                          style: TextStyle(color: finance.themeTextSub, fontSize: 11),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              )
+            else
+              SizedBox(
+                height: 85, 
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  itemCount: activeWallets.length, 
+                  itemBuilder: (context, index) {
+                    final wallet = activeWallets[index];
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: GestureDetector(
+                        onTap: () { HapticFeedback.lightImpact(); widget.onNavigate('wallets'); },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10), 
+                          width: 115, 
+                          decoration: BoxDecoration(
+                            color: finance.themeCard,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: finance.themeBorder),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  WalletLogoWidget(walletName: wallet.walletName, size: 'sm'),
+                                  if (!WalletLogoResolver.hasLogo(wallet.walletName)) const SizedBox(width: 8),
+                                  if (!WalletLogoResolver.hasLogo(wallet.walletName)) Expanded(child: Text(wallet.walletName.toUpperCase(), style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: finance.themeTextSub, overflow: TextOverflow.ellipsis))),
+                                ],
+                              ),
+                              FittedBox(
+                                fit: BoxFit.scaleDown, alignment: Alignment.centerLeft,
+                                child: Text(Formatters.formatCurrency(wallet.currentBalance, isHidden: !_showBalance), style: TextStyle(color: finance.themeText, fontWeight: FontWeight.w900, fontSize: 13)),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
-            ),
 
             const SizedBox(height: 32),
 
@@ -234,7 +279,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Column(
       children: sortedDates.map((dateStr) {
         List<TransactionModel> items = groupedData[dateStr]!;
-        double dailyExpense = items.where((t) => t.jenis == 'Pengeluaran').fold(0, (sum, t) => sum + t.nominal);
+
         String displayDate = dateStr == todayStr ? 'HARI INI' : (dateStr == yesterdayStr ? 'KEMARIN' : dateStr);
 
         return Padding(
@@ -250,14 +295,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(displayDate, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: finance.themeAccent, letterSpacing: 1.5)),
-                    if (dailyExpense > 0) Text("-${Formatters.formatCurrency(dailyExpense)}", style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Colors.redAccent)),
                   ],
                 ),
               ),
 
               ...items.map((tx) {
-                final dompet = finance.mySumberDana.firstWhere((d) => d.idDana == tx.idDana, orElse: () => finance.mySumberDana.first);
-                String dompetName = dompet.namaAset;
+                final dompet = finance.myWallets.firstWhere((d) => d.walletId == tx.walletId, orElse: () => finance.myWallets.first);
+                String dompetName = dompet.walletName;
 
                 bool isIncome = tx.jenis == 'Pemasukan';
                 bool isTransfer = tx.jenis == 'Transfer';
@@ -285,7 +329,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     onTap: () {
                       HapticFeedback.lightImpact();
                       TransactionDetailSheet.show(
-                        context: context, transaction: tx, sumberDana: finance.mySumberDana,
+                        context: context, transaction: tx, sumberDana: finance.myWallets,
                         onEdit: (selectedTx) { Navigator.push(context, MaterialPageRoute(builder: (_) => TransactionFormScreen(initialData: selectedTx))); },
                         onDelete: (selectedTx) {
                           finance.deleteTransaksi(selectedTx.idTransaksi);
@@ -324,10 +368,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               Text("$prefix${Formatters.formatCurrency(tx.nominal)}", style: TextStyle(color: isIncome ? Colors.greenAccent : (isTransfer ? finance.themeAccent : finance.themeText), fontWeight: FontWeight.w900, fontSize: 14)),
                               const SizedBox(height: 6),
                               Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  WalletHelper.getWalletLogo(dompetName, size: 'sm'),
-                                  const SizedBox(width: 4),
-                                  Text(dompetName, style: TextStyle(color: finance.themeTextSub, fontWeight: FontWeight.bold, fontSize: 10)),
+                                  WalletLogoWidget(walletName: dompetName, size: 'sm'),
+                                  if (!WalletLogoResolver.hasLogo(dompetName)) const SizedBox(width: 4),
+                                  if (!WalletLogoResolver.hasLogo(dompetName)) Text(dompetName, style: TextStyle(color: finance.themeTextSub, fontWeight: FontWeight.bold, fontSize: 10)),
                                 ],
                               ),
                             ],

@@ -66,7 +66,7 @@ class _DataStorageContentState extends State<_DataStorageContent> {
     try {
       final backupData = {
         'user_profile': finance.currentUser!.toJson(),
-        'wallets': finance.mySumberDana.map((w) => w.toJson()).toList(),
+        'wallets': finance.myWallets.map((w) => w.toJson()).toList(),
         'transactions': finance.myTransaksi.map((t) => t.toJson()).toList(),
         'metadata': {
           'backup_date': DateTime.now().toIso8601String(),

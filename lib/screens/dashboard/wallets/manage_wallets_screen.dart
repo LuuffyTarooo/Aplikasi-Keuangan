@@ -6,7 +6,8 @@ import 'package:provider/provider.dart';
 import 'package:aplikasi_keuangan/providers/finance_provider.dart';
 import 'package:aplikasi_keuangan/models/wallet_model.dart';
 import 'package:aplikasi_keuangan/core/utils/formatters.dart';
-import 'package:aplikasi_keuangan/core/utils/wallet_helper.dart';
+import 'package:aplikasi_keuangan/shared/widgets/wallet_logo_widget.dart';
+import 'package:aplikasi_keuangan/shared/bottom_sheets/add_wallet_sheet.dart';
 import 'package:aplikasi_keuangan/shared/widgets/custom_button.dart';
 
 class ManageWalletsSheet {
@@ -28,18 +29,15 @@ class _ManageWalletsContent extends StatefulWidget {
 }
 
 class _ManageWalletsContentState extends State<_ManageWalletsContent> {
-  // Fungsi Helper Menghitung Jumlah Transaksi di suatu Dompet
-  int _getTransactionCount(String idDana, FinanceProvider finance) {
-    return finance.myTransaksi.where((t) => t.idDana == idDana).length;
-  }
+
 
   void _handleAction(WalletModel wallet, String actionType, FinanceProvider finance) {
     HapticFeedback.heavyImpact();
     
     if (actionType == 'delete') {
-      finance.deleteSumberDana(wallet.idDana); 
+      finance.deleteWallet(wallet.walletId); 
     } else if (actionType == 'archive' || actionType == 'unarchive') {
-      finance.toggleArsipSumberDana(wallet.idDana);
+      finance.toggleArchiveWallet(wallet.walletId);
     }
   }
 
@@ -76,7 +74,7 @@ class _ManageWalletsContentState extends State<_ManageWalletsContent> {
                     Text(type == 'archive' ? 'Arsipkan Dompet?' : 'Aktifkan Dompet?', style: TextStyle(color: finance.themeText, fontSize: 20, fontWeight: FontWeight.w900)),
                     const SizedBox(height: 8),
                     Text(
-                      type == 'archive' ? 'Dompet "${wallet.namaAset}" akan disembunyikan dari dashboard.' : 'Dompet "${wallet.namaAset}" akan muncul lagi di dashboard.',
+                      type == 'archive' ? 'Dompet "${wallet.walletName}" akan disembunyikan dari dashboard.' : 'Dompet "${wallet.walletName}" akan muncul lagi di dashboard.',
                       textAlign: TextAlign.center, style: TextStyle(color: finance.themeTextSub, fontSize: 12),
                     ),
                     const SizedBox(height: 32),
@@ -113,7 +111,7 @@ class _ManageWalletsContentState extends State<_ManageWalletsContent> {
                     Text('Hapus Dompet?', style: TextStyle(color: finance.themeText, fontSize: 20, fontWeight: FontWeight.w900)),
                     const SizedBox(height: 8),
                     Text(
-                      txCount > 0 ? 'Ada $txCount transaksi di dompet "${wallet.namaAset}". Yakin mau hapus permanen?' : 'Dompet "${wallet.namaAset}" masih kosong. Yakin mau dihapus?',
+                      txCount > 0 ? 'Ada $txCount transaksi di dompet "${wallet.walletName}". Yakin mau hapus permanen?' : 'Dompet "${wallet.walletName}" masih kosong. Yakin mau dihapus?',
                       textAlign: TextAlign.center, style: TextStyle(color: finance.themeTextSub, fontSize: 12),
                     ),
                     const SizedBox(height: 32),
@@ -192,9 +190,18 @@ class _ManageWalletsContentState extends State<_ManageWalletsContent> {
   Widget build(BuildContext context) {
     final finance = Provider.of<FinanceProvider>(context);
 
+    // Optimasi: Hitung jumlah transaksi O(N+M) alih-alih memfilter list per dompet
+    final Map<String, int> txCountByWallet = {};
+    for (var tx in finance.myTransaksi) {
+      txCountByWallet[tx.walletId] = (txCountByWallet[tx.walletId] ?? 0) + 1;
+      if (tx.targetWalletId != null) {
+        txCountByWallet[tx.targetWalletId!] = (txCountByWallet[tx.targetWalletId!] ?? 0) + 1;
+      }
+    }
+
     // Pisahin dompet aktif & non-aktif
-    List<WalletModel> activeWallets = finance.mySumberDana.where((w) => w.isActive).toList();
-    List<WalletModel> archivedWallets = finance.mySumberDana.where((w) => !w.isActive).toList();
+    List<WalletModel> activeWallets = finance.myWallets.where((w) => w.isActive).toList();
+    List<WalletModel> archivedWallets = finance.myWallets.where((w) => !w.isActive).toList();
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.85,
@@ -242,24 +249,29 @@ class _ManageWalletsContentState extends State<_ManageWalletsContent> {
                 children: [
                   Text("DOMPET UTAMA", style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
                   const SizedBox(height: 12),
-                  ...activeWallets.map((w) {
-                    int txCount = _getTransactionCount(w.idDana, finance);
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Container(
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: activeWallets.length,
+                    itemBuilder: (context, index) {
+                      final w = activeWallets[index];
+                      int txCount = txCountByWallet[w.walletId] ?? 0;
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(20), border: Border.all(color: finance.themeBorder)),
                         child: Row(
                           children: [
-                            WalletHelper.getWalletLogo(w.namaAset, size: 'md'),
+                            WalletLogoWidget(walletName: w.walletName, size: 'md'),
                             const SizedBox(width: 16),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(w.namaAset, style: TextStyle(color: finance.themeText, fontSize: 14, fontWeight: FontWeight.bold)),
+                                  Text(w.walletName, style: TextStyle(color: finance.themeText, fontSize: 14, fontWeight: FontWeight.bold)),
                                   const SizedBox(height: 4),
-                                  Text(Formatters.formatCurrency(w.saldoTerkini), style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+                                  Text(Formatters.formatCurrency(w.currentBalance), style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
                                 ],
                               ),
                             ),
@@ -286,30 +298,36 @@ class _ManageWalletsContentState extends State<_ManageWalletsContent> {
                         ),
                       ),
                     );
-                  }),
+                  },
+                  ),
 
                   if (archivedWallets.isNotEmpty) ...[
                     const SizedBox(height: 32),
                     Text("DOMPET DIARSIPKAN", style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
                     const SizedBox(height: 12),
-                    ...archivedWallets.map((w) {
-                      int txCount = _getTransactionCount(w.idDana, finance);
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: Opacity(
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: archivedWallets.length,
+                      itemBuilder: (context, index) {
+                        final w = archivedWallets[index];
+                        int txCount = txCountByWallet[w.walletId] ?? 0;
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: Opacity(
                           opacity: 0.5,
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                             decoration: BoxDecoration(color: finance.themeCard, borderRadius: BorderRadius.circular(20), border: Border.all(color: finance.themeBorder)),
                             child: Row(
                               children: [
-                                WalletHelper.getWalletLogo(w.namaAset, size: 'md'),
+                                WalletLogoWidget(walletName: w.walletName, size: 'md'),
                                 const SizedBox(width: 16),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text(w.namaAset, style: TextStyle(color: finance.themeText, fontSize: 14, fontWeight: FontWeight.bold)),
+                                      Text(w.walletName, style: TextStyle(color: finance.themeText, fontSize: 14, fontWeight: FontWeight.bold)),
                                       const SizedBox(height: 4),
                                       Text("NON-AKTIF • $txCount Transaksi", style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.bold)),
                                     ],
@@ -338,7 +356,37 @@ class _ManageWalletsContentState extends State<_ManageWalletsContent> {
                         ),
                       );
                     }),
-                  ]
+                  ],
+
+                  const SizedBox(height: 32),
+                  GestureDetector(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      // Panggil modal Tambah Dompet yang sudah kita buat sebelumnya
+                      AddWalletSheet.show(context, finance);
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      decoration: BoxDecoration(
+                        color: finance.themeCard,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: finance.themeBorder, style: BorderStyle.solid),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.add_rounded, color: finance.themeTextSub, size: 24),
+                          const SizedBox(width: 8),
+                          Text(
+                            "TAMBAH DOMPET BARU",
+                            style: TextStyle(color: finance.themeTextSub, fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 1.5),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
                 ],
               ),
             ),

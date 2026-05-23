@@ -24,7 +24,7 @@
 //
 // mixin ExportMixin on ChangeNotifier {
 //   List<TransactionModel> get myTransaksi;
-//   List<WalletModel> get mySumberDana;
+//   List<WalletModel> get myWallets;
 //
 //   Future<void> exportData({
 //     required String format,

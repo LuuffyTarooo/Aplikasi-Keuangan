@@ -70,7 +70,7 @@ class _DetailContent extends StatelessWidget {
 
     final isPemasukan = transaction.jenis == 'Pemasukan';
     final isTransfer = transaction.jenis == 'Transfer';
-    final dompet = sumberDana.firstWhere((d) => d.idDana == transaction.idDana, orElse: () => sumberDana.first).namaAset;
+    final dompet = sumberDana.firstWhere((d) => d.walletId == transaction.walletId, orElse: () => sumberDana.first).walletName;
 
     // 🟢 TEMA DINAMIS
     final katModel = finance.getCategoryByName(transaction.kategori);

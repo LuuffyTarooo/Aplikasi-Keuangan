@@ -16,8 +16,8 @@ mixin UserMixin on ChangeNotifier {
   UserModel? get currentUser;
   set currentUser(UserModel? val);
 
-  List<WalletModel> get allSumberDana;
-  set allSumberDana(List<WalletModel> val);
+  List<WalletModel> get allWallets;
+  set allWallets(List<WalletModel> val);
   List<TransactionModel> get allTransaksi;
   set allTransaksi(List<TransactionModel> val);
   List<SavingGoalModel> get allSavings;
@@ -31,7 +31,7 @@ mixin UserMixin on ChangeNotifier {
   List<CategoryModel> get allKategori;
   set allKategori(List<CategoryModel> val);
 
-  void syncToStorage();
+  Future<void> syncToStorage();
 
   /// Beralih ke akun pengguna lain berdasarkan ID.
   void switchUser(String userId) {
@@ -68,7 +68,7 @@ mixin UserMixin on ChangeNotifier {
 
   /// Menghapus akun pengguna beserta seluruh data terkait (dompet, transaksi, dll.).
   void deleteUser(String userId) {
-    allSumberDana.removeWhere((d) => d.userId == userId);
+    allWallets.removeWhere((d) => d.userId == userId);
     allTransaksi.removeWhere((t) => t.userId == userId);
     allSavings.removeWhere((s) => s.userId == userId);
     allDebts.removeWhere((d) => d.userId == userId);

@@ -191,7 +191,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
                                 value: selectedDompet.isEmpty ? null : selectedDompet,
                                 hint: Text("Pilih dompet...", style: TextStyle(color: finance.themeTextSub.withValues(alpha: 0.5), fontSize: 14, fontWeight: FontWeight.bold)),
                                 isExpanded: true, dropdownColor: finance.themeCard, icon: Icon(Icons.account_balance_wallet_rounded, color: finance.themeTextSub), style: TextStyle(color: finance.themeText, fontSize: 14, fontWeight: FontWeight.bold),
-                                items: finance.mySumberDana.map((d) => DropdownMenuItem(value: d.idDana, child: Text("${d.namaAset} (Sisa: ${Formatters.formatCurrency(d.saldoTerkini)})"))).toList(),
+                                items: finance.myWallets.map((d) => DropdownMenuItem(value: d.walletId, child: Text("${d.walletName} (Sisa: ${Formatters.formatCurrency(d.currentBalance)})"))).toList(),
                                 onChanged: (v) { HapticFeedback.lightImpact(); setModalState(() => selectedDompet = v!); },
                               ),
                             ),
@@ -207,15 +207,15 @@ class _SavingsScreenState extends State<SavingsScreen> {
                       if (selectedDompet.isEmpty) return _showToast("Pilih dompetnya dulu Jar!", isWarning: true);
                       if (txNominal <= 0) return _showToast("Nominalnya yang bener dong.", isWarning: true);
 
-                      final dompet = finance.mySumberDana.firstWhere((d) => d.idDana == selectedDompet);
+                      final dompet = finance.myWallets.firstWhere((d) => d.walletId == selectedDompet);
                       String fallbackCatatan = isNabung ? "Nabung: ${goal.name}" : "Tarik Tabungan: ${goal.name}";
 
                       if (isNabung) {
-                        if (dompet.saldoTerkini < txNominal) return _showToast("Saldo ${dompet.namaAset} lu nggak cukup!", isError: true);
+                        if (dompet.currentBalance < txNominal) return _showToast("Saldo ${dompet.walletName} lu nggak cukup!", isError: true);
                         
                         finance.handleSaveTransaksi(TransactionModel(
                           idTransaksi: 'tx_${DateTime.now().millisecondsSinceEpoch}',
-                          jenis: 'Pengeluaran', nominal: txNominal, idDana: selectedDompet, kategori: 'Tabungan',
+                          jenis: 'Pengeluaran', nominal: txNominal, walletId: selectedDompet, kategori: 'Tabungan',
                           keterangan: txCatatan.isNotEmpty ? txCatatan : fallbackCatatan, tanggal: txTanggal, userId: finance.currentUser!.id,
                         ));
 
@@ -226,7 +226,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
 
                         finance.handleSaveTransaksi(TransactionModel(
                           idTransaksi: 'tx_${DateTime.now().millisecondsSinceEpoch}',
-                          jenis: 'Pemasukan', nominal: txNominal, idDana: selectedDompet, kategori: 'Tabungan',
+                          jenis: 'Pemasukan', nominal: txNominal, walletId: selectedDompet, kategori: 'Tabungan',
                           keterangan: txCatatan.isNotEmpty ? txCatatan : fallbackCatatan, tanggal: txTanggal, userId: finance.currentUser!.id,
                         ));
 

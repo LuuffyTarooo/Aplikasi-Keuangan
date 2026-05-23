@@ -8,7 +8,7 @@ mixin BudgetMixin on ChangeNotifier {
   List<BudgetModel> get allBudgets;
   set allBudgets(List<BudgetModel> val);
   UserModel? get currentUser;
-  void syncToStorage();
+  Future<void> syncToStorage();
 
   /// Mengambil budget milik user aktif. Buat baru jika belum ada.
   BudgetModel? get myBudget {

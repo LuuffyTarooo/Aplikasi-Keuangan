@@ -7,7 +7,7 @@ import 'package:aplikasi_keuangan/services/voice_parser_service.dart';
 
 mixin VoiceMixin on ChangeNotifier {
   List<CategoryModel> get myKategori;
-  List<WalletModel> get mySumberDana;
+  List<WalletModel> get myWallets;
 
   /// Mem-parsing raw text dari Voice Assistant untuk mendeteksi Tipe, Nominal, Kategori, dan Dompet.
   /// Fungsi ini asinkron walau cepat agar tidak memblokir main thread di perangkat mobile.
@@ -56,7 +56,7 @@ mixin VoiceMixin on ChangeNotifier {
     }
 
     // 4. Deteksi Dompet (Asal & Tujuan)
-    if (mySumberDana.isEmpty) {
+    if (myWallets.isEmpty) {
       throw Exception(
         "Lu belum punya dompet sama sekali Jar! Bikin dompet dulu.",
       );
@@ -75,18 +75,18 @@ mixin VoiceMixin on ChangeNotifier {
 
     // Helper untuk mendeteksi dompet dari sebagian teks
     String cariDompet(String textSlice) {
-      for (var dana in mySumberDana) {
-        if (textSlice.contains(dana.namaAset.toLowerCase())) return dana.idDana;
+      for (var dana in myWallets) {
+        if (textSlice.contains(dana.walletName.toLowerCase())) return dana.walletId;
       }
       for (var entry in walletSyns.entries) {
         if (entry.value.any((s) => textSlice.contains(s))) {
-          var found = mySumberDana
+          var found = myWallets
               .where(
                 (d) =>
-                    d.namaAset.toLowerCase().contains(entry.key.toLowerCase()),
+                    d.walletName.toLowerCase().contains(entry.key.toLowerCase()),
               )
               .toList();
-          if (found.isNotEmpty) return found.first.idDana;
+          if (found.isNotEmpty) return found.first.walletId;
         }
       }
       return '';
@@ -126,7 +126,7 @@ mixin VoiceMixin on ChangeNotifier {
       }
 
       if (detectedDompetAsal.isEmpty)
-        detectedDompetAsal = mySumberDana.first.idDana;
+        detectedDompetAsal = myWallets.first.walletId;
       if (detectedDompetTujuan.isEmpty) {
         throw Exception(
           "Dompet tujuannya nggak jelas Jar. Bilang 'Transfer ke BCA' misalnya.",
@@ -158,26 +158,26 @@ mixin VoiceMixin on ChangeNotifier {
             dompetGagal.length >= 2) {
           throw Exception("dompet $dompetGagal belum dibuat nih.");
         }
-        detectedDompetAsal = mySumberDana.first.idDana;
+        detectedDompetAsal = myWallets.first.walletId;
       }
     }
 
     // 5. Validasi Saldo (Khusus Pengeluaran & Transfer)
-    var dompetAsalObj = mySumberDana.firstWhere(
-      (d) => d.idDana == detectedDompetAsal,
+    var dompetAsalObj = myWallets.firstWhere(
+      (d) => d.walletId == detectedDompetAsal,
     );
     if ((jenis == TransactionTypes.expense ||
             jenis == TransactionTypes.transfer) &&
-        dompetAsalObj.saldoTerkini < nominal) {
+        dompetAsalObj.currentBalance < nominal) {
       throw Exception(
-        "Saldo ${dompetAsalObj.namaAset} lu nggak cukup buat transaksi ini.",
+        "Saldo ${dompetAsalObj.walletName} lu nggak cukup buat transaksi ini.",
       );
     }
 
     var dompetTujuanObj = (jenis == TransactionTypes.transfer)
-        ? mySumberDana.firstWhere(
-            (d) => d.idDana == detectedDompetTujuan,
-            orElse: () => mySumberDana.first,
+        ? myWallets.firstWhere(
+            (d) => d.walletId == detectedDompetTujuan,
+            orElse: () => myWallets.first,
           )
         : null;
 
@@ -189,23 +189,23 @@ mixin VoiceMixin on ChangeNotifier {
     String ttsMessage;
     if (jenis == TransactionTypes.transfer) {
       ttsMessage =
-          "Konfirmasi transfer ${nominal.toStringAsFixed(0)} rupiah, dari ${dompetAsalObj.namaAset} ke ${dompetTujuanObj!.namaAset}?";
+          "Konfirmasi transfer ${nominal.toStringAsFixed(0)} rupiah, dari ${dompetAsalObj.walletName} ke ${dompetTujuanObj!.walletName}?";
     } else if (jenis == TransactionTypes.expense) {
       ttsMessage =
-          "Konfirmasi pengeluaran ${nominal.toStringAsFixed(0)} rupiah, pakai ${dompetAsalObj.namaAset}?";
+          "Konfirmasi pengeluaran ${nominal.toStringAsFixed(0)} rupiah, pakai ${dompetAsalObj.walletName}?";
     } else {
       ttsMessage =
-          "Konfirmasi pemasukan ${nominal.toStringAsFixed(0)} rupiah, masuk ke ${dompetAsalObj.namaAset}?";
+          "Konfirmasi pemasukan ${nominal.toStringAsFixed(0)} rupiah, masuk ke ${dompetAsalObj.walletName}?";
     }
 
     return {
       'nominal': nominal,
       'kategori': kategoriId,
-      'id_dana': dompetAsalObj.idDana,
+      'id_dana': dompetAsalObj.walletId,
       'id_dana_tujuan':
-          dompetTujuanObj?.idDana, // Bisa null jika bukan transfer
-      'nama_dompet': dompetAsalObj.namaAset,
-      'nama_dompet_tujuan': dompetTujuanObj?.namaAset,
+          dompetTujuanObj?.walletId, // Bisa null jika bukan transfer
+      'nama_dompet': dompetAsalObj.walletName,
+      'nama_dompet_tujuan': dompetTujuanObj?.walletName,
       'keterangan': capitalizedText,
       'jenis': jenis,
       'tanggal': DateTime.now().toIso8601String(),

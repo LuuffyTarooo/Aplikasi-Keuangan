@@ -1,10 +1,17 @@
 // lib/models/transaction_model.dart
 class TransactionModel {
+  static double _parseDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value.replaceAll(RegExp(r'[^0-9.-]'), '')) ?? 0.0;
+    return 0.0;
+  }
+
   final String idTransaksi;
   final String jenis; // Pemasukan, Pengeluaran, Transfer
   final double nominal;
-  final String idDana;
-  final String? idDanaTujuan; // Buat Transfer (Bisa null)
+  final String walletId;
+  final String? targetWalletId; // Buat Transfer (Bisa null)
   final String kategori;
   final String keterangan;
   final String tanggal; // ISO String (contoh: 2026-05-16T12:00:00Z)
@@ -14,8 +21,8 @@ class TransactionModel {
     required this.idTransaksi,
     required this.jenis,
     required this.nominal,
-    required this.idDana,
-    this.idDanaTujuan,
+    required this.walletId,
+    this.targetWalletId,
     required this.kategori,
     required this.keterangan,
     required this.tanggal,
@@ -26,9 +33,9 @@ class TransactionModel {
     return TransactionModel(
       idTransaksi: json['id_transaksi'] ?? '',
       jenis: json['jenis'] ?? 'Pengeluaran',
-      nominal: (json['nominal'] ?? 0).toDouble(),
-      idDana: json['id_dana'] ?? '',
-      idDanaTujuan: json['id_dana_tujuan'], // Bisa null
+      nominal: _parseDouble(json['nominal']),
+      walletId: json['id_dana'] ?? '',
+      targetWalletId: json['id_dana_tujuan'], // Bisa null
       kategori: json['kategori'] ?? 'Lain-lain',
       keterangan: json['keterangan'] ?? '',
       tanggal: json['tanggal'] ?? DateTime.now().toIso8601String(),
@@ -41,8 +48,8 @@ class TransactionModel {
       'id_transaksi': idTransaksi,
       'jenis': jenis,
       'nominal': nominal,
-      'id_dana': idDana,
-      'id_dana_tujuan': idDanaTujuan,
+      'id_dana': walletId,
+      'id_dana_tujuan': targetWalletId,
       'kategori': kategori,
       'keterangan': keterangan,
       'tanggal': tanggal,

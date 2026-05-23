@@ -6,7 +6,7 @@ import 'package:aplikasi_keuangan/models/debt_model.dart';
 mixin DebtMixin on ChangeNotifier {
   List<DebtModel> get allDebts;
   set allDebts(List<DebtModel> val);
-  void syncToStorage();
+  Future<void> syncToStorage();
 
   /// Menambahkan hutang/piutang baru ke daftar.
   void addDebt(DebtModel debt) {

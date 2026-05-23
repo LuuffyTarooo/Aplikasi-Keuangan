@@ -720,7 +720,7 @@ class _BudgetTrackerScreenState extends State<BudgetTrackerScreen> {
     double currentLimit,
   ) {
     final controller = TextEditingController(
-      text: currentLimit > 0 ? currentLimit.toInt().toString() : "",
+      text: currentLimit > 0 ? Formatters.formatRibuan(currentLimit.toInt()) : "",
     );
 
     showModalBottomSheet(
@@ -781,6 +781,7 @@ class _BudgetTrackerScreenState extends State<BudgetTrackerScreen> {
                 controller: controller,
                 autofocus: true,
                 keyboardType: TextInputType.number,
+                inputFormatters: [CurrencyInputFormatter()],
                 style: TextStyle(
                   color: finance.themeText,
                   fontSize: 32,
@@ -830,7 +831,8 @@ class _BudgetTrackerScreenState extends State<BudgetTrackerScreen> {
               const SizedBox(height: 32),
               GestureDetector(
                 onTap: () {
-                  final val = double.tryParse(controller.text) ?? 0;
+                  final rawVal = controller.text.replaceAll(RegExp(r'[^0-9]'), '');
+                  final val = double.tryParse(rawVal) ?? 0;
                   finance.updateGlobalBudget(val);
                   Navigator.pop(context);
                 },
@@ -883,7 +885,7 @@ class _BudgetTrackerScreenState extends State<BudgetTrackerScreen> {
         editCategory ?? (allCatNames.isNotEmpty ? allCatNames.first : "");
     final controller = TextEditingController(
       text: editCategory != null
-          ? currentLimits[editCategory]?.toInt().toString()
+          ? Formatters.formatRibuan(currentLimits[editCategory]?.toInt())
           : "",
     );
 
@@ -1067,6 +1069,7 @@ class _BudgetTrackerScreenState extends State<BudgetTrackerScreen> {
                     controller: controller,
                     autofocus: editCategory != null,
                     keyboardType: TextInputType.number,
+                    inputFormatters: [CurrencyInputFormatter()],
                     style: TextStyle(
                       color: finance.themeText,
                       fontSize: 32,
@@ -1119,7 +1122,8 @@ class _BudgetTrackerScreenState extends State<BudgetTrackerScreen> {
                     onTap: () {
                       if (selectedCategory.isEmpty) return;
 
-                      final val = double.tryParse(controller.text) ?? 0;
+                      final rawVal = controller.text.replaceAll(RegExp(r'[^0-9]'), '');
+                      final val = double.tryParse(rawVal) ?? 0;
 
                       final newLimits = Map<String, double>.from(currentLimits);
                       newLimits[selectedCategory] = val;
