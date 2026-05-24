@@ -2,9 +2,8 @@
 
 class WalletLogoResolver {
   static const List<String> popularWallets = [
-    'BCA', 'Mandiri', 'BRI', 'BNI', 'BTN', 'CIMB', 'Danamon', 'Permata', 'OCBC', 'Maybank',
-    'Jago', 'blu', 'SeaBank', 'Neo', 'Allo', 'Saqu',
-    'GoPay', 'OVO', 'DANA', 'ShopeePay', 'LinkAja', 'Tunai'
+    'Tunai', 'BCA', 'BRI', 'BNI', 'Mandiri', 'GoPay', 'DANA', 'SeaBank', 'ShopeePay', 'Jago', 'Permata',
+    'BTN', 'CIMB', 'Danamon', 'OCBC', 'Maybank', 'blu', 'Neo', 'Allo', 'Saqu', 'OVO', 'LinkAja'
   ];
 
   static const Map<String, String> _logoMappings = {
