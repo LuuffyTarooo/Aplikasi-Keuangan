@@ -8,6 +8,8 @@ import '../../providers/finance_provider.dart';
 import '../../models/transaction_model.dart';
 import '../../models/wallet_model.dart';
 import '../../core/utils/formatters.dart';
+import '../../core/utils/wallet_logo_resolver.dart';
+import '../widgets/wallet_logo_widget.dart';
 import '../widgets/custom_button.dart';
 
 class TransactionDetailSheet {
@@ -71,6 +73,11 @@ class _DetailContent extends StatelessWidget {
     final isPemasukan = transaction.jenis == 'Pemasukan';
     final isTransfer = transaction.jenis == 'Transfer';
     final dompet = sumberDana.firstWhere((d) => d.walletId == transaction.walletId, orElse: () => sumberDana.first).walletName;
+    
+    String? targetDompet;
+    if (isTransfer && transaction.targetWalletId != null) {
+      targetDompet = sumberDana.firstWhere((d) => d.walletId == transaction.targetWalletId, orElse: () => sumberDana.first).walletName;
+    }
 
     // 🟢 TEMA DINAMIS
     final katModel = finance.getCategoryByName(transaction.kategori);
@@ -176,7 +183,27 @@ class _DetailContent extends StatelessWidget {
                   ),
                   child: Column(
                     children: [
-                      _DetailRow(finance: finance, icon: Icons.account_balance_wallet_rounded, label: "Metode Pembayaran", value: dompet),
+                      _DetailRow(
+                        finance: finance, 
+                        icon: Icons.account_balance_wallet_rounded, 
+                        label: "Metode Pembayaran", 
+                        valueWidget: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            WalletLogoWidget(walletName: dompet, size: 'sm'),
+                            if (!WalletLogoResolver.hasLogo(dompet)) const SizedBox(width: 4),
+                            if (!WalletLogoResolver.hasLogo(dompet)) Text(dompet, style: TextStyle(color: finance.themeText, fontWeight: FontWeight.bold, fontSize: 14)),
+                            if (isTransfer && targetDompet != null) ...[
+                              const SizedBox(width: 8),
+                              Icon(Icons.arrow_forward_rounded, size: 14, color: finance.themeTextSub),
+                              const SizedBox(width: 8),
+                              WalletLogoWidget(walletName: targetDompet, size: 'sm'),
+                              if (!WalletLogoResolver.hasLogo(targetDompet)) const SizedBox(width: 4),
+                              if (!WalletLogoResolver.hasLogo(targetDompet)) Text(targetDompet, style: TextStyle(color: finance.themeText, fontWeight: FontWeight.bold, fontSize: 14)),
+                            ],
+                          ],
+                        ),
+                      ),
                       const SizedBox(height: 16),
                       _DetailRow(finance: finance, icon: Icons.calendar_month_rounded, label: "Tanggal", value: tanggal),
                       const SizedBox(height: 16),
@@ -252,9 +279,10 @@ class _DetailRow extends StatelessWidget {
   final FinanceProvider finance;
   final IconData icon;
   final String label;
-  final String value;
+  final String? value;
+  final Widget? valueWidget;
 
-  const _DetailRow({required this.finance, required this.icon, required this.label, required this.value});
+  const _DetailRow({required this.finance, required this.icon, required this.label, this.value, this.valueWidget});
 
   @override
   Widget build(BuildContext context) {
@@ -272,7 +300,7 @@ class _DetailRow extends StatelessWidget {
             children: [
               Text(label.toUpperCase(), style: TextStyle(color: finance.themeTextSub, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
               const SizedBox(height: 2),
-              Text(value, style: TextStyle(color: finance.themeText, fontSize: 14, fontWeight: FontWeight.bold)),
+              if (valueWidget != null) valueWidget! else Text(value ?? '', style: TextStyle(color: finance.themeText, fontSize: 14, fontWeight: FontWeight.bold)),
             ],
           ),
         ),

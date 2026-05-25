@@ -305,6 +305,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                 bool isIncome = tx.jenis == 'Pemasukan';
                 bool isTransfer = tx.jenis == 'Transfer';
+                
+                String? targetDompetName;
+                if (isTransfer && tx.targetWalletId != null) {
+                  final targetDompet = finance.myWallets.firstWhere((d) => d.walletId == tx.targetWalletId, orElse: () => finance.myWallets.first);
+                  targetDompetName = targetDompet.walletName;
+                }
 
                 final katModel = finance.getCategoryByName(tx.kategori);
 
@@ -373,6 +379,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   WalletLogoWidget(walletName: dompetName, size: 'sm'),
                                   if (!WalletLogoResolver.hasLogo(dompetName)) const SizedBox(width: 4),
                                   if (!WalletLogoResolver.hasLogo(dompetName)) Text(dompetName, style: TextStyle(color: finance.themeTextSub, fontWeight: FontWeight.bold, fontSize: 10)),
+                                  if (isTransfer && targetDompetName != null) ...[
+                                    const SizedBox(width: 4),
+                                    Icon(Icons.arrow_forward_rounded, size: 10, color: finance.themeTextSub),
+                                    const SizedBox(width: 4),
+                                    WalletLogoWidget(walletName: targetDompetName, size: 'sm'),
+                                    if (!WalletLogoResolver.hasLogo(targetDompetName)) const SizedBox(width: 4),
+                                    if (!WalletLogoResolver.hasLogo(targetDompetName)) Text(targetDompetName, style: TextStyle(color: finance.themeTextSub, fontWeight: FontWeight.bold, fontSize: 10)),
+                                  ],
                                 ],
                               ),
                             ],
