@@ -390,7 +390,7 @@ class _BudgetTrackerScreenState extends State<BudgetTrackerScreen> {
                                     Text(
                                       sisaAnggaran > 0
                                           ? "${Formatters.formatCurrency(dailySafeLimit)} / hari"
-                                          : "Udah minus bos, ngerem!",
+                                          : "Udah minus woyy, ngerem!",
                                       style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.bold,
